@@ -1,4 +1,4 @@
-# Etapa 1: build (descarga deps)
+# Stage 1: build (descarga deps)
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 COPY tests/issuerservice-vc/requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps -r requirements.txt -w /wheels
 
-# Etapa 2: runtime
+# Stage 2: runtime
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -36,6 +36,4 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD \
   urllib.request.urlopen(url).read(); \
   sys.exit(0)" || exit 1
 
-# 👉 Ahora uvicorn apunta a main:app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
-
