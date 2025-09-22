@@ -1,0 +1,16 @@
+FROM alpine:latest
+
+RUN apk add --no-cache \
+    curl \
+    jq \
+    bash
+
+RUN mkdir -p /identityhub
+
+COPY deployment/identityhub/identityhub-seed-participant.sh /identityhub/identityhub-seed.sh
+
+RUN chmod +x /identityhub/identityhub-seed.sh
+
+WORKDIR /identityhub
+
+CMD ["/identityhub/identityhub-seed.sh"]

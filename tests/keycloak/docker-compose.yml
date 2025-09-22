@@ -1,0 +1,28 @@
+version: "3.5"
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.5 # UniMaaS version
+    container_name: keycloak
+    hostname: keycloak
+    networks:
+      - edc-network
+    ports:
+      - "5080:8080"
+      - "5443:8443"
+    restart: always
+    volumes:
+      - keycloak-volume:/opt/keycloak/data
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+    command:
+      - start-dev
+
+volumes:
+  keycloak-volume:
+    driver: local
+
+networks:
+  edc-network:
+    driver: bridge

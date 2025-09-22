@@ -1,0 +1,1971 @@
+{
+	"info": {
+		"_postman_id": "8e98a8a6-adb4-4c2d-9622-415d7ea98201",
+		"name": "UniMaaS-ED-NODE",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "3595887"
+	},
+	"item": [
+		{
+			"name": "0-NGINX",
+			"item": [
+				{
+					"name": "Obtain DID - Issuer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9876/issuerservice/.well-known/did.json",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9876",
+							"path": [
+								"issuerservice",
+								".well-known",
+								"did.json"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtain DID - Connector1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9876/connector1/.well-known/did.json",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9876",
+							"path": [
+								"connector1",
+								".well-known",
+								"did.json"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtain DID - Connector2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9876/connector2/.well-known/did.json",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9876",
+							"path": [
+								"connector2",
+								".well-known",
+								"did.json"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "1-Identity-Hub Connector1",
+			"item": [
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7190/api/check/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7190",
+							"path": [
+								"api",
+								"check",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health DID API",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7193/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7193",
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all participants",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7192/api/identity/v1alpha/participants",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7192",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"participants"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Participant By ID --> base64(DID)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7192/api/identity/v1alpha/participants/ZGlkOndlYjoxNzIuMTYuMTAuMTYlM0E5ODc2OmNvbm5lY3RvcjE=",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7192",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"participants",
+								"ZGlkOndlYjoxNzIuMTYuMTAuMTYlM0E5ODc2OmNvbm5lY3RvcjE="
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all KeyPairs",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7192/api/identity/v1alpha/keypairs",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7192",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"keypairs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All DID Documents",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:7192/api/identity/v1alpha/dids",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7192",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"dids"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Credentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is OK\", function() {",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 204])",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7192/api/identity/v1alpha/credentials",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7192",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"credentials"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "1-Identity-Hub Connector2",
+			"item": [
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7290/api/check/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7290",
+							"path": [
+								"api",
+								"check",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health DID API",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7293/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7293",
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all participants",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7292/api/identity/v1alpha/participants",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7292",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"participants"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Participant By ID --> base64(DID)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7292/api/identity/v1alpha/participants/ZGlkOndlYjoxNzIuMTYuMTAuMTYlM0E5ODc2OmNvbm5lY3RvcjI=",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7292",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"participants",
+								"ZGlkOndlYjoxNzIuMTYuMTAuMTYlM0E5ODc2OmNvbm5lY3RvcjI="
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get all KeyPairs",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7292/api/identity/v1alpha/keypairs",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7292",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"keypairs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All DID Documents",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:7292/api/identity/v1alpha/dids",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7292",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"dids"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Credentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is OK\", function() {",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 204])",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "value",
+									"value": "c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:7292/api/identity/v1alpha/credentials",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "7292",
+							"path": [
+								"api",
+								"identity",
+								"v1alpha",
+								"credentials"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2-Connector1",
+			"item": [
+				{
+					"name": "Status",
+					"item": [
+						{
+							"name": "Health",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8190/api/check/health",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8190",
+									"path": [
+										"api",
+										"check",
+										"health"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Accesing to Connector2",
+					"item": [
+						{
+							"name": "CatalogRequest to Connector2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const responseJson = pm.response.json();",
+											"",
+											"const offerTest = responseJson[\"dcat:dataset\"][\"odrl:hasPolicy\"][\"@id\"];",
+											"pm.environment.set(\"offerTest\", offerTest);",
+											"",
+											"const assetTest = responseJson[\"dcat:dataset\"][\"id\"];",
+											"pm.environment.set(\"assetTest\", assetTest);",
+											"",
+											"const participantId = responseJson[\"dspace:participantId\"];",
+											"pm.environment.set(\"participantId\", participantId);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "password",
+											"type": "string"
+										},
+										{
+											"key": "in",
+											"value": "header",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "x-api-key",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-User-Context",
+										"value": "usuarioprueba",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"@context\": {\n        \"@vocab\": \"https://w3id.org/edc/v0.0.1/ns/\"\n    },\n    \"@type\": \"CatalogRequest\",\n    \"protocol\": \"dataspace-protocol-http\",\n    \"counterPartyAddress\": \"http://{{conector2IP}}:8292/api/dsp\",\n    \"counterPartyId\": \"did:web:{{conector2IP}}%3A9877:connector2\",\n    \"querySpec\": {\n        \"offset\": 0,\n        \"limit\": 50\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8191/api/management/v3/catalog/request",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8191",
+									"path": [
+										"api",
+										"management",
+										"v3",
+										"catalog",
+										"request"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Initiate negotiation (with Connector2) ALL",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const responseJson = pm.response.json();",
+											"",
+											"const negotiationTest = responseJson[\"@id\"];",
+											"pm.environment.set(\"negotiationTest\", negotiationTest);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "password",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "x-api-key",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"ContractRequest\",\n    \"counterPartyAddress\": \"http://{{conector2IP}}:8292/api/dsp\",\n    \"counterPartyId\": \"did:web:{{conector2IP}}%3A9877:connector2\",\n    \"protocol\": \"dataspace-protocol-http\",\n    \"policy\": {\n        \"@type\": \"Offer\",\n        \"@id\": \"{{offerTest}}\",\n        \"assigner\": \"{{participantId}}\",\n        \"permission\": [{\n                \"action\": \"use\"\n            }],\n        \"prohibition\": [],\n        \"obligation\": [],\n        \"target\": \"{{assetTest}}\"\n    },\n    \"callbackAddresses\": []\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8191/api/management/v3/contractnegotiations",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8191",
+									"path": [
+										"api",
+										"management",
+										"v3",
+										"contractnegotiations"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Initiate negotiation (with Connector2) ROLE consumer",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const responseJson = pm.response.json();",
+											"",
+											"const negotiationTest = responseJson[\"@id\"];",
+											"pm.environment.set(\"negotiationTest\", negotiationTest);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "password",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "x-api-key",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"ContractRequest\",\n    \"counterPartyAddress\": \"http://{{conector2IP}}:8292/api/dsp\",\n    \"counterPartyId\": \"did:web:{{conector2IP}}%3A9877:connector2\",\n    \"protocol\": \"dataspace-protocol-http\",\n    \"policy\": {\n        \"@type\": \"Offer\",\n        \"@id\": \"{{offerTest}}\",\n        \"assigner\": \"{{participantId}}\",\n        \"permission\": [\n            {\n                \"action\": \"use\",\n                \"constraint\": {\n                    \"leftOperand\": \"DataAccess.roles\",\n                    \"operator\": \"eq\",\n                    \"rightOperand\": \"consumer\"\n                }\n            }\n        ],\n        \"prohibition\": [],\n        \"obligation\": [],\n        \"target\": \"{{assetTest}}\"\n    },\n    \"callbackAddresses\": []\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8191/api/management/v3/contractnegotiations",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8191",
+									"path": [
+										"api",
+										"management",
+										"v3",
+										"contractnegotiations"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Obtain ContractAgreementID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const responseJson = pm.response.json();",
+											"",
+											"const contractAgreementTest = responseJson[\"contractAgreementId\"];",
+											"pm.environment.set(\"contractAgreementTest\", contractAgreementTest);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "password",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "x-api-key",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8191/api/management/v3/contractnegotiations/{{negotiationTest}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8191",
+									"path": [
+										"api",
+										"management",
+										"v3",
+										"contractnegotiations",
+										"{{negotiationTest}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Transfer request",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const responseJson = pm.response.json();",
+											"",
+											"const transferTest = responseJson[\"@id\"];",
+											"pm.environment.set(\"transferTest\", transferTest);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "password",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "x-api-key",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"@context\": {\n    \"@vocab\": \"https://w3id.org/edc/v0.0.1/ns/\"\n  },\n  \"@type\": \"TransferRequestDto\",\n  \"counterPartyAddress\": \"http://{{conector2IP}}:8292/api/dsp\",\n  \"connectorId\": \"did:web:{{conector2IP}}%3A9877:connector2\",\n  \"contractId\": \"{{contractAgreementTest}}\",\n  \"protocol\": \"dataspace-protocol-http\",\n  \"dataDestination\": {\n        \"type\": \"HttpProxy\"\n  },\n  \"transferType\": \"HttpData-PULL\"  \n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8191/api/management/v3/transferprocesses",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8191",
+									"path": [
+										"api",
+										"management",
+										"v3",
+										"transferprocesses"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Obtain Authorization",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const responseJson = pm.response.json();",
+											"",
+											"const authorizationTest = responseJson[\"authorization\"];",
+											"pm.environment.set(\"authorizationTest\", authorizationTest);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "password",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "x-api-key",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8191/api/management/v3/edrs/{{transferTest}}/dataaddress",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8191",
+									"path": [
+										"api",
+										"management",
+										"v3",
+										"edrs",
+										"{{transferTest}}",
+										"dataaddress"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Transfer Data (from Publi API)",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is >=200 and <300\", function () {",
+											"    pm.expect(pm.response.code < 300 && pm.response.code >= 200).to.be.true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{authorizationTest}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:12002/api/public",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "12002",
+									"path": [
+										"api",
+										"public"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "2-Connector2",
+			"item": [
+				{
+					"name": "Status",
+					"item": [
+						{
+							"name": "Health",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8290/api/check/health",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8290",
+									"path": [
+										"api",
+										"check",
+										"health"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get Assets (local)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is >=200 and <300\", function () {",
+									"    pm.expect(pm.response.code < 300 && pm.response.code >= 200).to.be.true",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": {\n        \"@vocab\": \"https://w3id.org/edc/v0.0.1/ns/\"\n    },\n    \"@type\": \"QuerySpec\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/assets/request",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"assets",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Policies (local)",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": {\n        \"@vocab\": \"https://w3id.org/edc/v0.0.1/ns/\"\n    },\n    \"@type\": \"QuerySpec\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/policydefinitions/request",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"policydefinitions",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Contract Definitions (local)",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": {\n        \"@vocab\": \"https://w3id.org/edc/v0.0.1/ns/\"\n    },\n    \"@type\": \"QuerySpec\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/contractdefinitions/request",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"contractdefinitions",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CatalogRequest to Connector1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is >=200 and <300\", function () {",
+									"    pm.expect(pm.response.code < 300 && pm.response.code >= 200).to.be.true",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": {\n        \"@vocab\": \"https://w3id.org/edc/v0.0.1/ns/\"\n    },\n    \"@type\": \"CatalogRequest\",\n    \"protocol\": \"dataspace-protocol-http\",\n    \"counterPartyAddress\": \"http://{{conector2IP}}:8192/api/dsp\",\n    \"counterPartyId\": \"did:web:{{conector2IP}}%3A9876:connector1\",\n    \"querySpec\": {\n        \"offset\": 0,\n        \"limit\": 50\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/catalog/request",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"catalog",
+								"request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Asset",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@id\": \"asset-1\",\n    \"@type\": \"Asset\",\n    \"properties\": {\n        \"description\": \"This asset requires Membership to view and negotiate.\"\n    },\n    \"dataAddress\": {\n        \"@type\": \"DataAddress\",\n        \"type\": \"HttpData\",\n        \"baseUrl\": \"https://jsonplaceholder.typicode.com/todos\",\n        \"proxyPath\": \"true\",\n        \"proxyQueryParams\": \"true\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/assets",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"assets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Policy DataAccess.level=processing",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"PolicyDefinition\",\n    \"@id\": \"require-dataprocessor\",\n    \"policy\": {\n        \"@type\": \"Set\",\n        \"obligation\": [\n            {\n                \"action\": \"use\",\n                \"constraint\": {\n                    \"leftOperand\": \"DataAccess.level\",\n                    \"operator\": \"eq\",\n                    \"rightOperand\": \"processing\"\n                }\n            }\n        ]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/policydefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"policydefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Policy DataAccess.roles=consumer",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"PolicyDefinition\",\n    \"@id\": \"test-provider-role-consumer\",\n    \"policy\": {\n        \"@type\": \"Set\",\n        \"permission\": [\n            {\n                \"action\": \"use\",\n                \"constraint\": {\n                    \"leftOperand\": \"DataAccess.roles\",\n                    \"operator\": \"eq\",\n                    \"rightOperand\": \"consumer\"\n                }\n            }\n        ]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/policydefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"policydefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Policy DataAccess.roles=provider",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"PolicyDefinition\",\n    \"@id\": \"test-provider-role-provider\",\n    \"policy\": {\n        \"@type\": \"Set\",\n        \"permission\": [\n            {\n                \"action\": \"use\",\n                \"constraint\": {\n                    \"leftOperand\": \"DataAccess.roles\",\n                    \"operator\": \"eq\",\n                    \"rightOperand\": \"provider\"\n                }\n            }\n        ]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/policydefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"policydefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Policy (Allow ALL)",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"PolicyDefinition\",\n    \"@id\": \"allow-all-policy\",\n    \"policy\": {\n        \"@type\": \"Set\",\n        \"permission\": [{\n            \"action\": \"use\"\n        }]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/policydefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"policydefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contract DataAccess.level=processing",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@id\": \"dataprocessor-def\",\n    \"@type\": \"ContractDefinition\",\n    \"accessPolicyId\": \"require-dataprocessor\",\n    \"contractPolicyId\": \"require-dataprocessor\",\n    \"assetsSelector\": {\n        \"@type\": \"Criterion\",\n        \"operandLeft\": \"https://w3id.org/edc/v0.0.1/ns/id\",\n        \"operator\": \"=\",\n        \"operandRight\": \"asset-1\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/contractdefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"contractdefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contract DataAccess.roles=consumer",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@id\": \"dataprocessor-def-role-consumer\",\n    \"@type\": \"ContractDefinition\",\n    \"accessPolicyId\": \"test-provider-role-consumer\",\n    \"contractPolicyId\": \"test-provider-role-consumer\",\n    \"assetsSelector\": {\n        \"@type\": \"Criterion\",\n        \"operandLeft\": \"https://w3id.org/edc/v0.0.1/ns/id\",\n        \"operator\": \"=\",\n        \"operandRight\": \"asset-1\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/contractdefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"contractdefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contract DataAccess.roles=provider",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@id\": \"dataprocessor-def-role-provider\",\n    \"@type\": \"ContractDefinition\",\n    \"accessPolicyId\": \"test-provider-role-provider\",\n    \"contractPolicyId\": \"test-provider-role-provider\",\n    \"assetsSelector\": {\n        \"@type\": \"Criterion\",\n        \"operandLeft\": \"https://w3id.org/edc/v0.0.1/ns/id\",\n        \"operator\": \"=\",\n        \"operandRight\": \"asset-1\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/contractdefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"contractdefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Contract (Allow ALL)",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "password",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"ContractDefinition\",\n    \"@id\": \"allow-all-contract-def\",\n    \"accessPolicyId\": \"allow-all-policy\",\n    \"contractPolicyId\": \"allow-all-policy\",\n    \"assetsSelector\": [{\n        \"@type\": \"Criterion\",\n        \"operandLeft\": \"https://w3id.org/edc/v0.0.1/ns/id\",\n        \"operator\": \"=\",\n        \"operandRight\": \"asset-1\"\n    }]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8291/api/management/v3/contractdefinitions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8291",
+							"path": [
+								"api",
+								"management",
+								"v3",
+								"contractdefinitions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

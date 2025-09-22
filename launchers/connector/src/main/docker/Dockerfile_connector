@@ -1,0 +1,83 @@
+# Stage 1: Build
+FROM openjdk:17-jdk-slim AS builder
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy Gradle Wrapper files and build configuration files
+COPY gradle.properties .
+COPY gradlew .
+COPY gradlew.bat .
+COPY gradle ./gradle
+COPY build.gradle.kts .
+COPY settings.gradle.kts .
+#COPY resources ./resources
+
+#COPY .run ./.run
+COPY config ./config
+#COPY deployment ./deployment
+
+#COPY extensions ./extensions
+#COPY extensions/catalog-node-resolver/src ./extensions/catalog-node-resolver/src
+#COPY extensions/catalog-node-resolver/build.gradle.kts ./extensions/catalog-node-resolver/build.gradle.kts
+COPY extensions/dcp-impl/src ./extensions/dcp-impl/src
+COPY extensions/dcp-impl/build.gradle.kts ./extensions/dcp-impl/build.gradle.kts
+#COPY extensions/did-example-resolver/src ./extensions/did-example-resolver/src
+#COPY extensions/did-example-resolver/build.gradle.kts ./extensions/did-example-resolver/build.gradle.kts
+COPY extensions/superuser-seed/src ./extensions/superuser-seed/src
+COPY extensions/superuser-seed/build.gradle.kts ./extensions/superuser-seed/build.gradle.kts
+
+#PDTE_JUAN: 20250921
+#COPY extensions/vp-context-extension/src ./extensions/vp-context-extension/src
+#COPY extensions/vp-context-extension/build.gradle.kts ./extensions/vp-context-extension/build.gradle.kts
+
+#COPY launchers ./launchers
+#COPY launchers/catalog-server/src ./launchers/catalog-server/src
+#COPY launchers/catalog-server/build.gradle.kts ./launchers/catalog-server/build.gradle.kts
+COPY launchers/connector/src ./launchers/connector/src
+COPY launchers/connector/build.gradle.kts ./launchers/connector/build.gradle.kts
+#COPY launchers/identity-hub/src ./launchers/identity-hub/src
+#COPY launchers/identity-hub/build.gradle.kts ./launchers/identity-hub/build.gradle.kts
+#COPY launchers/issuerservice/src ./launchers/issuerservice/src
+#COPY launchers/issuerservice/build.gradle.kts ./launchers/issuerservice/build.gradle.kts
+
+# Grant execution permissions to the Gradle Wrapper
+RUN chmod +x gradlew gradlew.bat
+RUN chmod +x /app/gradlew /app/gradlew.bat
+
+# Build the application using Gradle (this will create the executable JAR)
+RUN ./gradlew clean :launchers:connector:shadowJar --stacktrace
+
+# Stage 2: Final image
+FROM eclipse-temurin:23.0.2_7-jre-alpine
+
+# Set the working directory
+WORKDIR /app
+
+RUN apk --no-cache add curl jq
+
+# Copy the executable JAR from the build stage
+COPY --from=builder /app/launchers/connector/build/libs/connector.jar /app/connector.jar
+
+COPY /deployment/env/connector.env config.properties
+
+# Copy the deployment directory (needed for example to have the participants list) from the build stage
+#COPY --from=builder /app/deployment ./deployment
+
+COPY deployment ./deployment
+
+# Copy and prepare the dynamic startup script
+COPY launchers/connector/src/main/docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=5s --timeout=5s --retries=10 CMD curl --fail http://localhost:8080/api/check/health
+
+# REPLACED BY ENTRYPOINT USAGE
+#ENV ENV_JVM_ARGS=""
+#ENV SECRETS=""
+#CMD ["sh", "-c", "exec java -Dedc.vault.secrets=\"$SECRETS\" -Djava.util.logging.config.file=/app/logging.properties -Djava.security.egd=file:/dev/urandom -Dedc.fs.config=./config.properties -jar connector.jar --log-level=debug"]
+
+# Use the new entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
