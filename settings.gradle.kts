@@ -32,9 +32,6 @@ include(":extensions:superuser-seed")
 //include(":tests:performance")
 //include(":tests:end2end")
 
-//PDTE_JUAN: 20250921
-//include(":extensions:vp-context-extension")
-
 // launcher modules
 include(":launchers:identity-hub")
 //include(":launchers:controlplane")

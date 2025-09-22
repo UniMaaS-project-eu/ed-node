@@ -24,9 +24,6 @@ dependencies {
     runtimeOnly(project(":extensions:dcp-impl")) // some patches/impls for DCP
 //    runtimeOnly(project(":extensions:catalog-node-resolver")) // to trigger the federated catalog
 
-    //PDTE_JUAN: 20250921
-    //implementation(project(":extensions:vp-context-extension"))
-
     // ################### Checkpoint http://localhost:9191/api/check/health ###################
     implementation(libs.edc.api.observability)
 

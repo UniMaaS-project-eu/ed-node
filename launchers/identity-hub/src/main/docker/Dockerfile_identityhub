@@ -27,10 +27,6 @@ COPY extensions/dcp-impl/build.gradle.kts ./extensions/dcp-impl/build.gradle.kts
 COPY extensions/superuser-seed/src ./extensions/superuser-seed/src
 COPY extensions/superuser-seed/build.gradle.kts ./extensions/superuser-seed/build.gradle.kts
 
-#PDTE_JUAN: 20250921
-#COPY extensions/vp-context-extension/src ./extensions/vp-context-extension/src
-#COPY extensions/vp-context-extension/build.gradle.kts ./extensions/vp-context-extension/build.gradle.kts
-
 #COPY launchers ./launchers
 #COPY launchers/catalog-server/src ./launchers/catalog-server/src
 #COPY launchers/catalog-server/build.gradle.kts ./launchers/catalog-server/build.gradle.kts

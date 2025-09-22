@@ -22,9 +22,6 @@ dependencies {
     runtimeOnly(project(":extensions:superuser-seed"))
 //    runtimeOnly(project(":extensions:did-example-resolver")) --> REPLACED BY "vault-ini.sh"
 
-    //PDTE_JUAN: 20250921
-    //implementation(project(":extensions:vp-context-extension"))
-
     implementation(libs.edc.ih.spi) // needed in the extensions here
     implementation(libs.edc.ih.spi.credentials) // needed in the extensions here
 

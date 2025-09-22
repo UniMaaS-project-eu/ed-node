@@ -168,10 +168,6 @@ services:
       - UNIMAAS_OIDC_IDP_PATH=${UNIMAAS_OIDC_IDP_PATH}
       - UNIMAAS_OIDC_IDP_CLIENT_ID=${UNIMAAS_OIDC_IDP_CLIENT_ID}
       - UNIMAAS_OIDC_IDP_CLIENT_SECRET=${UNIMAAS_OIDC_IDP_CLIENT_SECRET}
-
-      #PDTE_JUAN: 20250921
-      ########################### VP Context Manager Configuration ###########################
-      #- EDC_CONNECTOR_INTERNAL_URL=http://edc-connector-${ED_NODE_INSTANCE_NAME}:8081  
       
       ########################### PostgreSQL persistence ###########################
       ###### Connection data is included in Vault via the "vault-init.sh" script. ######
