@@ -1,30 +1,29 @@
 #!/bin/bash
 
 # Script to generate DIDs and keys for Eclipse EDC connectors
-# Uso: ./generateKeysPrivPubVault.sh <hostDID:portDID> <hostCredentialService:portCredentialService> <hostIdentityHub:portIdentityHub> <hostConnectorDSP:portConnectorDSP> <connector>
 
 set -e
 
 # Verify that arguments have been provided
 if [ $# -lt 2 ]; then
-    echo "Uso: $0 <hostDID:portDID> <hostCredentialService:portCredentialService> <hostIdentityHub:portIdentityHub> <hostConnectorDSP:portConnectorDSP> <connector>"
-    echo "Ejemplo: $0 localhost:9876 localhost:7191 localhost:7192 localhost:8192 connector"
+    echo "Use: $0 <instanceName> <hostDID:portDID>"
+    echo "Ejemplo: $0 issuerservice localhost:9878"
     exit 1
 fi
 
-HOST_PORT=$1
-HOST_PORT_CS=$2
-HOST_PORT_IH=$3
-HOST_PORT_DSP=$4
-PARTICIPANT=$5
+PARTICIPANT=$1
+HOST_PORT=$2
+#HOST_PORT_CS=$3
+#HOST_PORT_IH=$4
+#HOST_PORT_DSP=$5
 
 # URL-encode of host:port for DID
 DID_HOST=$(echo "$HOST_PORT" | sed 's/:/%3A/g')
 DID_ID="did:web:${DID_HOST}:${PARTICIPANT}"
 
 # Create base folder to DIDs y keys
-ASSETS_DIR="deployment/assets"
-VAULT_DIR="deployment/vault"
+ASSETS_DIR="assets"
+VAULT_DIR="vault"
 
 DIDS_DIR="$ASSETS_DIR/dids"
 KEYS_DIR="$ASSETS_DIR/keysPrivPub"
@@ -63,25 +62,53 @@ generate_participant_did() {
     X_VALUE=$(pem_to_base64url "$public_key_file")
     
     echo "  Creating DID document: $DID_ID"
+
+#    cat > "$did_file" << EOF
+#{
+#    "service": [
+#        {
+#            "id": "${DID_ID}#dsp-api",
+#            "type": "DataspaceConnector",
+#            "serviceEndpoint": "http://${HOST_PORT_DSP}/api/dsp"
+#        },
+#        {
+#            "id": "${DID_ID}#credential-service",
+#            "type": "CredentialService",
+#            "serviceEndpoint": "http://${HOST_PORT_CS}/api/credentials/v1/participants/$(echo -n "$DID_ID" | base64 -w 0)"
+#        },
+#        {
+#            "id": "${DID_ID}#identity-hub",
+#            "type": "IdentityHub",
+#            "serviceEndpoint": "http://${HOST_PORT_IH}/api/identity"
+#        }
+#    ],
+#    "verificationMethod": [
+#        {
+#            "id": "${DID_ID}#key-1",
+#            "type": "JsonWebKey2020",
+#            "controller": "${DID_ID}",
+#            "publicKeyMultibase": null,
+#            "publicKeyJwk": {
+#                "kty": "OKP",
+#                "crv": "Ed25519",
+#                "x": "${X_VALUE}"
+#            }
+#        }
+#    ],
+#    "authentication": ["key-1"],
+#    "id": "${DID_ID}",
+#    "@context": [
+#        "https://www.w3.org/ns/did/v1",
+#        {
+#            "@base": "${DID_ID}"
+#        }
+#    ]
+#}
+#EOF
+
     cat > "$did_file" << EOF
 {
-    "service": [
-        {
-            "id": "${DID_ID}#dsp-api",
-            "type": "DataspaceConnector",
-            "serviceEndpoint": "http://${HOST_PORT_DSP}/api/dsp"
-        },
-        {
-            "id": "${DID_ID}#credential-service",
-            "type": "CredentialService",
-            "serviceEndpoint": "http://${HOST_PORT_CS}/api/credentials/v1/participants/$(echo -n "$DID_ID" | base64 -w 0)"
-        },
-        {
-            "id": "${DID_ID}#identity-hub",
-            "type": "IdentityHub",
-            "serviceEndpoint": "http://${HOST_PORT_IH}/api/identity"
-        }
-    ],
+    "service": [],
     "verificationMethod": [
         {
             "id": "${DID_ID}#key-1",
@@ -105,7 +132,8 @@ generate_participant_did() {
     ]
 }
 EOF
-    
+
+
     echo "  ✓ DID create: $did_file"
     echo "  ✓ Private key: $private_key_file"
     echo "  ✓ Public key: $public_key_file"

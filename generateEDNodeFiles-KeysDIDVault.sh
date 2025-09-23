@@ -1,22 +1,21 @@
 #!/bin/bash
 
 # Script to generate DIDs and keys for Eclipse EDC connectors
-# Uso: ./generateKeysPrivPubVault.sh <hostDID:portDID> <hostCredentialService:portCredentialService> <hostIdentityHub:portIdentityHub> <hostConnectorDSP:portConnectorDSP> <connector>
 
 set -e
 
 # Verify that arguments have been provided
 if [ $# -lt 2 ]; then
-    echo "Uso: $0 <hostDID:portDID> <hostCredentialService:portCredentialService> <hostIdentityHub:portIdentityHub> <hostConnectorDSP:portConnectorDSP> <connector>"
-    echo "Ejemplo: $0 localhost:9876 localhost:7191 localhost:7192 localhost:8192 connector"
+    echo "Use: $0 <instanceName> <hostDID:portDID> <hostCredServ:portCredServ> <identityHost:identityPort> <dspHost:dspPort>"
+    echo "Ejemplo: $0 connector1 localhost:9876 localhost:7191 localhost:7192 localhost:8192"
     exit 1
 fi
 
-HOST_PORT=$1
-HOST_PORT_CS=$2
-HOST_PORT_IH=$3
-HOST_PORT_DSP=$4
-PARTICIPANT=$5
+PARTICIPANT=$1
+HOST_PORT=$2
+HOST_PORT_CS=$3
+HOST_PORT_IH=$4
+HOST_PORT_DSP=$5
 
 # URL-encode of host:port for DID
 DID_HOST=$(echo "$HOST_PORT" | sed 's/:/%3A/g')

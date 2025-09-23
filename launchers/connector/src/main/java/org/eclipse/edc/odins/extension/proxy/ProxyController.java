@@ -125,9 +125,9 @@ public class ProxyController {
     }
 
     /**
-     * Obtiene un valor de configuración dando prioridad a la variable de entorno.
-     * Si la variable de entorno no está definida, busca en la configuración del sistema.
-     * Si no hay configuración, utiliza el valor por defecto.
+     * Obtains a configuration value, giving priority to the environment variable.
+     * If the environment variable is not defined, searches the system configuration.
+     * If there is no configuration, uses the default value.
      */
     private String getConfigValue(ServiceExtensionContext context, String envKey, String configKey, String defaultValue) {
         String envValue = System.getenv(envKey);
@@ -137,27 +137,27 @@ public class ProxyController {
         return context.getConfig().getString(configKey, defaultValue);
     }
 
-    // Método para debugging del token - agregar al ProxyController
+    // Token debugging method - add to ProxyController
     private void debugToken(String token, Monitor monitor) {
         try {
-            // Remover "Bearer " si está presente
+            // Remove "Bearer" if present
             String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
             
-            // Dividir el JWT en sus partes
+            // Split the JWT into its parts
             String[] parts = cleanToken.split("\\.");
             if (parts.length != 3) {
-                monitor.severe("Token JWT no tiene 3 partes: " + parts.length);
+                monitor.severe("JWT token does not have 3 parts: " + parts.length);
                 return;
             }
             
-            // Decodificar el payload (segunda parte)
+            // Decoding the payload (part two)
             String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
-            monitor.info("Payload del token: " + payload);
+            monitor.info("Token Payload: " + payload);
             
-            // Parsear el payload JSON
+            // Parse the JSON payload
             JsonNode payloadJson = objectMapper.readTree(payload);
             
-            // Verificar campos importantes
+            // Check important fields
             long iat = payloadJson.has("iat") ? payloadJson.get("iat").asLong() : 0;
             long exp = payloadJson.has("exp") ? payloadJson.get("exp").asLong() : 0;
             String iss = payloadJson.has("iss") ? payloadJson.get("iss").asText() : "N/A";
@@ -174,21 +174,21 @@ public class ProxyController {
             monitor.info("Expires (exp): " + (exp > 0 ? exp + " (" + Instant.ofEpochSecond(exp) + ")" : "NO EXPIRATION"));
             monitor.info("Current time: " + currentTime + " (" + Instant.now() + ")");
             
-            // Validaciones específicas
+            // Specific validations
             if (iat > currentTime) {
-                monitor.warning("PROBLEMA: Token emitido en el futuro (iat > now)");
+                monitor.warning("PROBLEM: Token issued in the future (iat > now)");
             }
             if (exp > 0 && exp < currentTime) {
-                monitor.warning("PROBLEMA: Token expirado (exp < now)");
+                monitor.warning("PROBLEM: Expired token (exp < now)");
             }
             if (iss.isEmpty() || aud.isEmpty() || sub.isEmpty()) {
-                monitor.warning("PROBLEMA: Campos obligatorios vacíos");
+                monitor.warning("PROBLEM: Required fields are empty");
             }
             
-            monitor.info("=== FIN DEBUG TOKEN INFO ===");
+            monitor.info("=== END DEBUG TOKEN INFO ===");
             
         } catch (Exception e) {
-            monitor.severe("Error decodificando token para debug: " + e.getMessage(), e);
+            monitor.severe("Error decoding token for debug: " + e.getMessage(), e);
         }
     }
 
@@ -223,7 +223,6 @@ public class ProxyController {
 
         /* DEPRECATED is not supported
         //Standard authorization + including Method (policies that considers methods)
-        //Para añadir el método a la autorización
         var contextProperties = new java.util.HashMap<String, Object>();
         contextProperties.put(EDC_NAMESPACE + "httpMethod", requestContext.getMethod());
         var authorization = authorizationService.authorize(token, contextProperties);
@@ -246,7 +245,7 @@ public class ProxyController {
             return Response.status(FORBIDDEN).build();
         }
 
-        //PDTE_JUAN: Realizar la validación del XACML token (definir la función)
+        //PDTE_JUAN: Perform XACML token validation (define the function)
         var authorizationXacml = true;
         if (!authorizationXacml) {
             return Response.status(FORBIDDEN).build();
@@ -254,7 +253,7 @@ public class ProxyController {
 
         var sourceDataAddress = authorization.getContent();
 
-        monitor.info("=== PROPIEDADES DE sourceDataAddress ===");
+        monitor.info("=== sourceDataAddress properties ===");
         Boolean isInfluxDb = false;
         String paramsReq = "";
         String allowedMethods = "";
@@ -278,19 +277,19 @@ public class ProxyController {
 
 
         }
-        monitor.info("=== FIN DE LAS PROPIEDADES ===");
+        monitor.info("=== END PROPERTIES ===");
 
-        // Validación de métodos permitidos
+        // Validation of allowed methods
         if (!allowedMethods.isEmpty()) {
             String currentMethod = requestContext.getMethod();
             
-            // Convertir la cadena de métodos permitidos en una lista, eliminando espacios
+            // Convert the string of allowed methods to a list, removing spaces
             List<String> allowedMethodsList = Arrays.stream(allowedMethods.split(","))
                     .map(String::trim)
                     .map(String::toUpperCase)
                     .collect(Collectors.toList());
             
-            // Verificar si el método actual está en la lista de métodos permitidos
+            // Check if the current method is in the list of allowed methods
             if (!allowedMethodsList.contains(currentMethod.toUpperCase())) {
                 monitor.warning("Method not allowed: " + currentMethod + ". Allowed methods: " + allowedMethods);
                 return Response.status(Response.Status.METHOD_NOT_ALLOWED)
@@ -298,19 +297,18 @@ public class ProxyController {
                         .build();
             }
             
-            //monitor.info("Método " + currentMethod + " validado correctamente contra métodos permitidos: " + allowedMethods);
         }
 
         try {
 
-            // PASO 1. Obtiene la dirección donde se ha de realizar el reenvío
-            // - Opcion 1: Esta opción NO considera los parámetros de la request a la hora de realizar la redirección a la API de la fuente de datos.
+            // STEP 1. Get the address to which the forwarding should be performed
+            // - Option 1: This option does NOT consider the request parameters when redirecting to the data source API.
             /*
             var targetUrl = sourceDataAddress.getStringProperty(EDC_NAMESPACE + "baseUrl") + "/" + requestContext.getUriInfo().getPath();
             */
-            // - Opcion 2: Esta opción SI considera los parámetros de la request a la hora de realizar la redirección a la API de la fuente de datos.
+            // - Option 2: This option DOES consider the request parameters when redirecting to the data source API.
             var targetUrlBuilder = new StringBuilder(sourceDataAddress.getStringProperty(EDC_NAMESPACE + "baseUrl"));
-            // Añade esta línea para loguear el valor de targetUrl
+            // Add this line to log the value of targetUrl
             monitor.info("1 - Proxy target URL: " + targetUrlBuilder);
             var endpointUrl = requestContext.getUriInfo().getPath();
             monitor.info("2 - Endpoint: " + endpointUrl);
@@ -325,38 +323,37 @@ public class ProxyController {
                 String key = entry.getKey();
                 for (String value : entry.getValue()) {
                     if (!firstParamAdded) {
-                        // Si es el primer parámetro de TODOS, se añade el '?'
+                        // If it is the first parameter of ALL, the '?' is added.
                         targetUrlBuilder.append("?");
                         firstParamAdded = true;
                     } else {
-                        // Si ya se añadió el '?' o algún otro parámetro, se añade '&'
+                        // If the '?' or some other parameter was already added, '&' is added
                         targetUrlBuilder.append("&");
                     }
                     targetUrlBuilder.append(key).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
                 }
             }
-            // --- Lógica para añadir los parámetros de InfluxDB ---
+            // --- Logic for adding InfluxDB parameters ---
 
             if (!"".equals(paramsReq)) {
 
                 if (!firstParamAdded) {
-                    // Si no se ha añadido NINGÚN parámetro todavía
-                    // y paramsReq no está vacío, empezamos con '?'
+                    // If NO parameters have been added yet and paramsReq is not empty, we start with '?'
                     targetUrlBuilder.append("?");
-                    firstParamAdded = true; // Ya hemos añadido el primer separador
+                    firstParamAdded = true; // We have already added the first separator
                 } else {
                     targetUrlBuilder.append("&");
                 }
 
                 String cleanParamsReq = paramsReq;
 
-                // Eliminar '?' o '&' inicial si ya lo hemos gestionado
+                // Remove the initial '?' or '&' if we have already handled it
                 if (cleanParamsReq.startsWith("?") || cleanParamsReq.startsWith("&")) {
                     cleanParamsReq = cleanParamsReq.substring(1);
                 }
 
                 targetUrlBuilder.append(cleanParamsReq);
-                // Aunque ya esté, si cleanParamsReq tiene contenido, ahora sí tenemos parámetros.
+                // Even though it's already there, if cleanParamsReq has content, we now have parameters.
                 firstParamAdded = true;
 
             }
@@ -364,15 +361,15 @@ public class ProxyController {
             var targetUrl = targetUrlBuilder.toString();
             monitor.info("4 - Final target URL: " + targetUrl);
 
-            // PASO 2. Prepara la petición a realizar (headers, params, body... )
-            // - Opcion 1: Esta opción no considera las cabeceras de la request a la hora de realizar la redirección a la API de la fuente de datos.
+            // STEP 2. Prepare the request to be made (headers, params, body...)
+            // - Option 1: This option does not consider the request headers when redirecting to the data source API.
             /*
             var request = HttpRequest.newBuilder()
                     .uri(URI.create(targetUrl))
                     .method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofInputStream(requestContext::getEntityStream))
                     .build();
             */
-            // - Opcion 2: Esta opción SI considera las cabeceras de la request a la hora de realizar la redirección a la API de la fuente de datos.
+            // - Option 2: This option DOES consider the request headers when redirecting to the data source API.
             //var requestBuilder = HttpRequest.newBuilder()
             //        .uri(URI.create(targetUrl))
             //        .method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofInputStream(requestContext::getEntityStream));
@@ -384,132 +381,121 @@ public class ProxyController {
             InputStream requestBodyStream = requestContext.getEntityStream();
             String originalContentType = requestContext.getHeaderString(CONTENT_TYPE);
             
-            // --- Lógica de transformación del body si es InfluxDB Query y es JSON ---
+            // --- Body transformation logic if it is InfluxDB Query and it is JSON ---
             if (isInfluxDb && "query".equalsIgnoreCase(endpointUrl) && originalContentType != null && originalContentType.contains("application/json")) {
-                monitor.info("Detectada consulta en InfluxDB con body JSON. Intentando conversión a Flux Query.");
+                monitor.info("Detected InfluxDB query with JSON body. Attempting conversion to Flux Query.");
                 try {
-                    // Leer el flujo de entrada completo en un String (importante ya que solo se puede leer una vez)
+                    // Read the entire input stream into a String (important since it can only be read once)
                     String jsonString = new String(requestBodyStream.readAllBytes(), StandardCharsets.UTF_8);
                     
-                    // Generar la consulta Flux usando la función generateFluxQuery
+                    // Generate the Flux query using the generateFluxQuery function
                     String fluxQueryResponse = generateFluxQuery(bucketInfluxDb, jsonString);
                     
-                    // Parsear la respuesta para verificar si fue exitosa
+                    // Parse the response to verify if it was successful
                     ObjectMapper objectMapper = new ObjectMapper();
                     JsonNode responseNode = objectMapper.readTree(fluxQueryResponse);
                     
                     if (responseNode.get("status").asInt() == 0) {
-                        // Conversión exitosa, usar la consulta Flux generada
+                        // Conversion successful, use the generated Flux query
                         String fluxQuery = responseNode.get("message").asText();
-                        monitor.info("Consulta Flux generada: " + fluxQuery);
+                        monitor.info("Query Flux: " + fluxQuery);
                         
-                        // Usar el body convertido y establecer el Content-Type correcto para InfluxDB
+                        // Use the converted body and set the correct Content-Type for InfluxDB
                         requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofString(fluxQuery, StandardCharsets.UTF_8));
                         requestBuilder.header(CONTENT_TYPE, "application/vnd.flux");
                     } else {
-                        // Error en la conversión, usar el body original
+                        // Conversion failed, use original body
                         String errorMessage = responseNode.get("message").asText();
-                        monitor.warning("Error en la conversión a Flux Query: " + errorMessage + ". Enviando el body original.");
+                        monitor.warning("Error: Flux Query Conversion: " + errorMessage + ". Sendind original body.");
                         requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofString(jsonString, StandardCharsets.UTF_8));
                         requestBuilder.header(CONTENT_TYPE, originalContentType);
                     }
                 } catch (Exception e) {
-                    monitor.severe("Error durante la conversión de JSON a Flux Query: " + e.getMessage(), e);
+                    monitor.severe("Error: Flux Query Conversion (JSON conversion): " + e.getMessage(), e);
                     try {
-                        // Fallback: Enviar el body original si la conversión falla completamente
+                        // Fallback: Send the original body if the conversion fails completely
                         String jsonString = new String(requestBodyStream.readAllBytes(), StandardCharsets.UTF_8);
                         requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofString(jsonString, StandardCharsets.UTF_8));
                         requestBuilder.header(CONTENT_TYPE, originalContentType);
                     } catch (IOException ioException) {
-                        monitor.severe("Error al leer el body original como fallback: " + ioException.getMessage(), ioException);
+                        monitor.severe("Error reading original body as fallback: " + ioException.getMessage(), ioException);
                         requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.noBody());
                     }
                 }
-            // --- Lógica de transformación del body si es InfluxDB Write y es JSON-LD ---
+            // --- Body transformation logic if it is InfluxDB Write and it is JSON-LD ---
             } else if (isInfluxDb && "write".equalsIgnoreCase(endpointUrl) && originalContentType != null && originalContentType.contains("application/ld+json")) {
-                monitor.info("Detectada escritura en InfluxDB con body JSON-LD. Intentando conversión.");
+                monitor.info("Write detected in InfluxDB with JSON-LD body. Attempting conversion..");
                 try {
-                    // Leer el flujo de entrada completo en un String (importante ya que solo se puede leer una vez)
+                    // Read the entire input stream into a String (important since it can only be read once)
                     String jsonLdString = new String(requestBodyStream.readAllBytes(), StandardCharsets.UTF_8);
                         
-                    // Parsear JSON-LD y convertir a InfluxDB Line Protocol
+                    // Parse JSON-LD and convert to InfluxDB Line Protocol
                     JsonNode jsonNode = objectMapper.readTree(jsonLdString);
-                    String influxLineProtocolBody = convertJsonLdToInfluxLineProtocol(jsonNode, monitor); // Llamar a la función de conversión
+                    String influxLineProtocolBody = convertJsonLdToInfluxLineProtocol(jsonNode, monitor);
 
                     if (influxLineProtocolBody != null && !influxLineProtocolBody.isEmpty()) {
-                        monitor.info("Line Protocol convertido: " + influxLineProtocolBody);
-                        // Usar el body convertido y establecer el Content-Type correcto para InfluxDB
+                        monitor.info("Line Protocol converted: " + influxLineProtocolBody);
+                        // Use the converted body and set the correct Content-Type for InfluxDB
                         requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofString(influxLineProtocolBody, StandardCharsets.UTF_8));
                         requestBuilder.header(CONTENT_TYPE, "text/plain; charset=utf-8");
                     } else {
-                        monitor.warning("La conversión de JSON-LD a InfluxDB resultó en un body vacío. Enviando el body original si existe.");
+                        monitor.warning("Converting JSON-LD to InfluxDB resulted in an empty body. Sending the original body if it exists.");
                         //requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofInputStream(() -> new ByteArrayInputStream(jsonLdString.getBytes(StandardCharsets.UTF_8)))); // Usar el body original como fallback
                         requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofString(jsonLdString, StandardCharsets.UTF_8));
                         requestBuilder.header(CONTENT_TYPE, originalContentType);
                     }
                 } catch (Exception e) {
-                    monitor.severe("Error durante la conversión de JSON-LD a InfluxDB: " + e.getMessage(), e);
-                    // Fallback: Enviar el body original si la conversión falla completamente
+                    monitor.severe("Error converting JSON-LD to InfluxDB: " + e.getMessage(), e);
+                    // Fallback: Send the original body if the conversion fails completely
                     requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofInputStream(() -> requestBodyStream));
                     requestBuilder.header(CONTENT_TYPE, originalContentType);
                 }
             } else {
-                // Si no es escritura de InfluxDB o no es JSON-LD, enviar el body original tal cual
+                // If it is not an InfluxDB write or it is not JSON-LD, send the original body as is
                 requestBuilder.method(requestContext.getMethod(), HttpRequest.BodyPublishers.ofInputStream(() -> requestBodyStream));
                 // Copiar la cabecera Content-Type original
                 if (originalContentType != null) {
                     requestBuilder.header(CONTENT_TYPE, originalContentType);
                 }
             }
-            // --- Fin de la lógica de transformación del body ---
+            // --- End of body transformation logic ---
 
-            // Copiar las cabeceras de la solicitud original (excepto algunas que quizás no quieras reenviar)
+            // Copy the headers from the original request (except for some you may not want to forward)
             requestContext.getHeaders().forEach((name, values) -> {
-                // Aquí puedes añadir lógica para filtrar qué cabeceras reenviar
+                // Here you can add logic to filter which headers to forward.
                 //if (!name.equalsIgnoreCase(AUTHORIZATION) && !name.equalsIgnoreCase("Host") && !name.equalsIgnoreCase("Connection") && !name.equalsIgnoreCase("Content-Length")) {  // Ejemplo de exclusión                    
                 if (!name.equalsIgnoreCase(AUTHORIZATION) && !name.equalsIgnoreCase("Host") && !name.equalsIgnoreCase("Connection") && !name.equalsIgnoreCase("Content-Length") && !name.equalsIgnoreCase(CONTENT_TYPE)) {  // Ejemplo de exclusión
                     values.forEach(value -> requestBuilder.header(name, value));
                 }
             });
 
-            // --- Lógica para añadir el header de autorización de InfluxDB ---
+            // --- Logic to add the InfluxDB authorization header ---
             if (!"".equals(tokenInfluxDb)) {
                 requestBuilder.header(AUTHORIZATION, tokenInfluxDb);
             }
 
-            /*
-            if (isInfluxDb && ("write".equalsIgnoreCase(endpointUrl) || "query".equalsIgnoreCase(endpointUrl))) {
-                // Sobrescribe cualquier header Authorization existente o lo añade.
-                // InfluxDB usa el formato "Token <token>"
-
-                
-
-                requestBuilder.header(AUTHORIZATION, "Token " + this.influxDbAdminToken);
-                //monitor.info("Añadido header de autorización para InfluxDB.");
-            }
-            */
-            // --- Fin de la lógica para InfluxDB ---
+            // --- End of logic for InfluxDB ---
 
 
             var request = requestBuilder.build();
 
-            // PASO 3. Reenvio de la petición para obtener la información
+            // PASO 3. Forwarding the request to obtain the information
             // 20250618
             //var response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
             // 20250618
             HttpResponse<InputStream> upstreamResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
-            // Lee completamente el InputStream en un array de bytes
+            // Reads the entire InputStream into a byte array
             byte[] responseBodyBytes;
             try (InputStream is = upstreamResponse.body()) {
-                // Para Java 9 y superior:
+                // For Java 9 and higher:
                 responseBodyBytes = is.readAllBytes(); 
 
-                // Para Java 8 (si no puedes usar readAllBytes, que fue añadido en Java 9):
-                // Necesitarías una librería auxiliar como Apache Commons IO:
-                // responseBodyBytes = IOUtils.toByteArray(is); 
-                // O una implementación manual:
+                // For Java 8 (if you can't use readAllBytes, which was added in Java 9):
+                // You would need a helper library like Apache Commons IO:
+                // responseBodyBytes = IOUtils.toByteArray(is);
+                // Or a manual implementation:
                 /*
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                 int nRead;
@@ -522,16 +508,16 @@ public class ProxyController {
                 */
 
             } catch (IOException e) {
-                // Es crucial manejar cualquier error al leer el stream.
-                // Esto podría ocurrir si el upstream cierra la conexión inesperadamente.
-                monitor.severe("Error al leer la respuesta de la fuente de datos: " + e.getMessage());
+                // It is crucial to handle any errors when reading the stream.
+                // This could occur if the upstream unexpectedly closes the connection.
+                monitor.severe("Error reading response from data source: " + e.getMessage());
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity("Error al procesar la respuesta del servidor externo.")
+                            .entity("Error processing response from external server.")
                             .build();
             }
 
 
-            // PASO 4. Devuelve la respuesta de la fuente de datos
+            // STEP 4. Return the response from the data source
             // 20250618
             //return Response.status(response.statusCode())
             //        .header(CONTENT_TYPE, response.headers().firstValue(CONTENT_TYPE).orElse(APPLICATION_OCTET_STREAM))
@@ -563,28 +549,28 @@ public class ProxyController {
                     return Response.status(upstreamResponse.statusCode())
                             .header(CONTENT_TYPE, "application/ld+json")
                             .entity(jsonLd)
-                            .build(); // NO se copia Content-Encoding porque ya no aplica
+                            .build(); // Content-Encoding is NOT copied because it no longer applies.
                 }
             }
 
             Response.ResponseBuilder responseBuilder = Response.status(upstreamResponse.statusCode())
                     .header(CONTENT_TYPE, upstreamResponse.headers().firstValue(CONTENT_TYPE).orElse(APPLICATION_OCTET_STREAM));
 
-            // Copia la cabecera Content-Encoding SOLO si existe en la respuesta de InfluxDB
+            // Copy the Content-Encoding header ONLY if it exists in the InfluxDB response
             upstreamResponse.headers().firstValue(CONTENT_ENCODING).ifPresent(encoding -> 
                     responseBuilder.header(CONTENT_ENCODING, encoding)
             );
 
-            // Opcional pero recomendado: Reenvía también la cabecera Vary si existe.
-            // La cabecera Vary indica al cliente (y a los proxies en medio)
-            // que la respuesta puede variar en función de ciertos encabezados de la petición (como Accept-Encoding).
+            // Optional but recommended: Also forward the Vary header if it exists.
+            // The Vary header indicates to the client (and any proxies in between)
+            // that the response may vary based on certain request headers (such as Accept-Encoding).
             upstreamResponse.headers().firstValue("Vary").ifPresent(vary ->
                     responseBuilder.header("Vary", vary)
             );
 
 
             return responseBuilder
-                    .entity(responseBodyBytes) // Los bytes (comprimidos o no)
+                    .entity(responseBodyBytes)
                     .build();
                     
 
@@ -651,17 +637,17 @@ public class ProxyController {
     }
 
     /*
-    Convierte un payload JSON en una cadena de consulta Flux para InfluxDB siguiendo las reglas especificadas.
-    - "bucket" El nombre del bucket de InfluxDB (ej. "test_org_bucket").
-    - "jsonPayload" La cadena JSON que contiene los parámetros de la consulta.
-    Debe contener las claves "id", "measurements" (array) y opcionalmente "start", "stop", "last".
-    Una cadena JSON con un campo "status" (0 para éxito, -1 para error) y un campo "message" (la consulta Flux o una descripción del error).
+    Converts a JSON payload to a Flux query string for InfluxDB following the specified rules.
+    - "bucket" The name of the InfluxDB bucket (e.g., "test_org_bucket").
+    - "jsonPayload" The JSON string containing the query parameters.
+    Must contain the keys "id", "measurements" (array), and optionally "start", "stop", and "last".
+    A JSON string with a "status" field (0 for success, -1 for error) and a "message" field (the Flux query or a description of the error).
     */
 
     /*
     String bucketName = "test_org_bucket";
 
-    // Ejemplo 1: Payload JSON completo
+    // Ejemplo 1: Complete Payload JSON
     String jsonPayload1 = "{" +
         "    \"id\": \"urn:ngsi-ld:sensor:01\"," +
         "    \"measurements\": [\"temperature\"]," +
@@ -670,7 +656,7 @@ public class ProxyController {
         "    \"last\": false" +
     "}";
 
-    System.out.println("--- Ejemplo 1: Payload Completo ---");
+    System.out.println("--- Example 1: Complete Payload ---");
     String resultJson1 = generateFluxQuery(bucketName, jsonPayload1);
     */
 
@@ -689,7 +675,7 @@ public class ProxyController {
             String startValue = json.has("start") ? json.get("start").asText("1970-01-01T00:00:00Z") : "1970-01-01T00:00:00Z";
             String stopValue = json.has("stop") ? json.get("stop").asText() : null;
 
-            // Asegurar que 'Z' esté presente solo si no lo está ya en la cadena
+            // Ensure that 'Z' is present only if it is not already present in the string
             String formattedStart = startValue.endsWith("Z") ? startValue : startValue + "Z";
 
             queryBuilder.append("\n    |> range(start: ").append(formattedStart);
@@ -704,7 +690,7 @@ public class ProxyController {
             String entityId = json.has("id") ? json.get("id").asText() : null;
             if (entityId == null || entityId.isEmpty()) {
                 responseJson.put("status", -1);
-                responseJson.put("message", "Error: El campo 'id' es obligatorio en el payload JSON.");
+                responseJson.put("message", "Error: The 'id' field is required in the JSON payload.");
                 return responseJson.toString();
             }
             queryBuilder.append(String.format("\n    |> filter(fn: (r) => r.deviceId == \"%s\")", entityId));
@@ -713,7 +699,7 @@ public class ProxyController {
             JsonNode measurementsNode = json.get("measurements");
             if (measurementsNode == null || !measurementsNode.isArray()) {
                 responseJson.put("status", -1);
-                responseJson.put("message", "Error: El campo 'measurements' es obligatorio en el payload JSON y debe ser un array.");
+                responseJson.put("message", "Error: The 'measurements' field is required in the JSON payload and must be an array.");
                 return responseJson.toString();
             }
 
@@ -725,7 +711,7 @@ public class ProxyController {
                 }
                 queryBuilder.append(String.format("\n    |> filter(fn: (r) => %s)", String.join(" or ", measurementFilters)));
             }
-            // Si measurementsArray está vacío, no se añade ningún filtro de measurement.
+            // If measurementsArray is empty, no measurement filter is added.
 
             // 5. last()
             boolean lastFlag = json.has("last") ? json.get("last").asBoolean(false) : false;
@@ -734,7 +720,7 @@ public class ProxyController {
                 queryBuilder.append("\n    |> last()");
             }
 
-            // 6. Elimina los campos que no aportan nada en la salida, de rango de fechas de la consulta, nombre del campo donde está el valor,... para que no pese tanto la respuesta
+            // 6. Eliminate fields that do not contribute anything to the output, such as the date range of the query, the name of the field where the value is located, etc., so that the response does not weigh so much.
             queryBuilder.append("\n    |> drop(columns: [\"_start\", \"_stop\", \"_field\"])");
 
             // 7. yield(name: "data_...")
@@ -747,16 +733,16 @@ public class ProxyController {
 
         } catch (Exception e) {
             responseJson.put("status", -1);
-            responseJson.put("message", "Error de parseo JSON: " + e.getMessage());
+            responseJson.put("message", "Error parsing JSON: " + e.getMessage());
             return responseJson.toString();
         }
     }
 
-    // --- Función de conversión JSON-LD a InfluxDB Line Protocol ---
+    // --- JSON-LD to InfluxDB Line Protocol conversion function ---
     private String convertJsonLdToInfluxLineProtocol(JsonNode jsonNode, Monitor monitor) {
         StringBuilder lineProtocol = new StringBuilder();
         
-        // Si el nivel superior es un array (múltiples observaciones en un documento JSON-LD)
+        // If the top level is an array (multiple observations in a JSON-LD document)
         if (jsonNode.isArray()) {
             for (JsonNode observationNode : jsonNode) {
                 String singleLine = parseSingleObservation(observationNode, monitor);
@@ -764,14 +750,14 @@ public class ProxyController {
                     lineProtocol.append(singleLine).append("\n");
                 }
             }
-        } else { // Objeto de observación único
+        } else { // Single observation object
             String singleLine = parseSingleObservation(jsonNode, monitor);
             if (singleLine != null) {
                 lineProtocol.append(singleLine).append("\n");
             }
         }
         
-        // Eliminar salto de línea final si está presente
+        // Remove trailing line break if present
         if (lineProtocol.length() > 0 && lineProtocol.charAt(lineProtocol.length() - 1) == '\n') {
             lineProtocol.setLength(lineProtocol.length() - 1);
         }
@@ -779,45 +765,15 @@ public class ProxyController {
         return lineProtocol.toString();
     }
 
-    /*
     private String parseSingleObservation(JsonNode observationNode, Monitor monitor) {
         try {
-            // Reglas de mapeo basadas en el ejemplo JSON-LD proporcionado (SOSA/OM)
-            String measurement = extractLocalName(observationNode.get("sosa:observedProperty").get("@id").asText());
-            String deviceId = extractLocalName(observationNode.get("sosa:madeBySensor").get("@id").asText());
-            
-            // Suponiendo sosa:hasResult -> om:hasValue -> om:hasSimpleValue
-            double value = observationNode.get("sosa:hasResult").get("om:hasValue").get("om:hasSimpleValue").asDouble();
-            
-            // Marca de tiempo
-            String timestampIso = observationNode.get("sosa:resultTime").get("@value").asText();
-            // Convertir a nanosegundos Unix (InfluxDB por defecto)
-            long timestampNano = Instant.parse(timestampIso).toEpochMilli() * 1_000_000L; 
-
-            // Construir Line Protocol: measurement,tagKey=tagValue fieldKey=fieldValue timestamp
-            return String.format("%s,deviceId=%s value=%s %d",
-                                 measurement,
-                                 escapeTagValue(deviceId), // Escapar el valor del tag
-                                 value,
-                                 timestampNano);
-
-        } catch (Exception e) {
-            monitor.warning("Fallo al parsear una observación W3C individual: " + e.getMessage() + ". Nodo: " + observationNode.toString());
-            return null; // Devolver null si el parseo falla para una observación
-        }
-    }
-    */
-
-    private String parseSingleObservation(JsonNode observationNode, Monitor monitor) {
-        try {
-            // Reglas de mapeo basadas en el ejemplo JSON-LD proporcionado (SOSA/OM)
             String measurement = extractLocalName(observationNode.get("sosa:observedProperty").get("@id").asText());
             String deviceId = extractLocalName(observationNode.get("sosa:madeBySensor").get("@id").asText());
 
-            // Extraer valor
+            // Extract value
             double value = observationNode.get("sosa:hasResult").get("om:hasValue").get("om:hasSimpleValue").asDouble();
 
-            // Extraer unidad
+            // Extract unit
             String unit = extractLocalName(observationNode
                     .get("sosa:hasResult")
                     .get("om:hasValue")
@@ -825,11 +781,11 @@ public class ProxyController {
                     .get("@id")
                     .asText());
 
-            // Extraer timestamp y convertir a nanosegundos
+            // Extract timestamp and nanoseconds conversion
             String timestampIso = observationNode.get("sosa:resultTime").get("@value").asText();
             long timestampNano = Instant.parse(timestampIso).toEpochMilli() * 1_000_000L;
 
-            // Construir Line Protocol
+            // Build Line Protocol
             return String.format("%s,deviceId=%s,unit=%s value=%s %d",
                 measurement,
                 escapeTagValue(deviceId),
@@ -838,7 +794,7 @@ public class ProxyController {
                 timestampNano);
 
         } catch (Exception e) {
-            monitor.warning("Fallo al parsear una observación W3C individual: " + e.getMessage() + ". Nodo: " + observationNode.toString());
+            monitor.warning("Failed to parse an individual W3C observation: " + e.getMessage() + ". Node: " + observationNode.toString());
             return null;
         }
     }
@@ -846,12 +802,12 @@ public class ProxyController {
     private String extractLocalName(String uri) {
         if (uri == null) return null;
         
-        // Si contiene prefijo tipo 'ex:AirTemperature' o 'qudt:Percent'
+        // If it contains a prefix like 'ex:AirTemperature' or 'qudt:Percent'
         if (uri.contains(":") && !uri.startsWith("http")) {
             return uri.substring(uri.indexOf(':') + 1);
         }
 
-        // Si es una URI estándar
+        // If it is a standard URI
         int hashIndex = uri.lastIndexOf('#');
         int slashIndex = uri.lastIndexOf('/');
         if (hashIndex != -1 && hashIndex > slashIndex) {
@@ -860,26 +816,26 @@ public class ProxyController {
         return uri.substring(slashIndex + 1);
     }
     
-    // InfluxDB Line Protocol requiere escapar caracteres especiales para tags
+    // InfluxDB Line Protocol requires escaping special characters for tags
     private String escapeTagValue(String value) {
         if (value == null) {
             return "";
         }
-        // Escapar espacios, comas, signos de igual, comillas dobles y barras invertidas
+        // Escape spaces, commas, equal signs, double quotes, and backslashes
         return value.replace(" ", "\\ ")
                     .replace(",", "\\,")
                     .replace("=", "\\=")
                     .replace("\"", "\\\"")
-                    .replace("\\", "\\\\"); // Escapar barras invertidas al final
+                    .replace("\\", "\\\\"); // Escape trailing backslashes
     }
 
     /**
-     * Convierte contenido CSV de InfluxDB a formato JSON-LD.
-     * Este es el reverso de la conversión de JSON-LD a Line Protocol.
+     * Converts InfluxDB CSV content to JSON-LD format.
+     * This is the reverse of the JSON-LD to Line Protocol conversion.
      *
-     * @param csv El contenido CSV de InfluxDB.
-     * @param monitor El monitor para logs.
-     * @return Una cadena JSON-LD representando las observaciones.
+     * @param csv The InfluxDB CSV content.
+     * @param monitor The monitor for logs.
+     * @return A JSON-LD string representing the observations.
      */
     private String convertInfluxCsvToJsonLd(String csv, Monitor monitor) {
         ArrayNode observations = objectMapper.createArrayNode();
@@ -889,23 +845,22 @@ public class ProxyController {
 
         String[] headers = lines[0].split(",", -1);
 
-        // Elimina columnas vacías al principio (como en ",result,...")
-        // También maneja si el primer campo es "result" o similar que no queremos en los headers
+        // Removes empty columns at the beginning (like in ",result,...") also handles if the first field is "result" or similar that we don't want in the headers
         int startIndex = 0;
         if (headers.length > 0 && (headers[0].isBlank() || headers[0].equalsIgnoreCase("#datatype") || headers[0].equalsIgnoreCase("result"))) {
             for (int i = 0; i < headers.length; i++) {
-                // Buscamos el índice de la columna "_time" o el primer encabezado que no sea "result" o "#datatype"
-                // Esto nos asegura que el startIndex es correcto para los datos.
+                // We look for the index of the "_time" column or the first header that is not "result" or "#datatype"
+                // This ensures that the startIndex is correct for the data.
                 if (headers[i].equalsIgnoreCase("_time") || (!headers[i].equalsIgnoreCase("result") && !headers[i].equalsIgnoreCase("#datatype") && !headers[i].isBlank())) {
                     startIndex = i;
                     break;
                 }
             }
         }
-        // Creamos un nuevo array de headers que solo contenga los encabezados relevantes a partir del startIndex
+        // We create a new headers array that only contains the relevant headers starting from the startIndex
         String[] actualHeaders = Arrays.copyOfRange(headers, startIndex, headers.length);
 
-        //Realiza limpieza de caracteres especiales que puede hacer en el nombre de las columnas y quita espacios en blanco
+        //Performs cleaning of special characters that can be in column names and removes blank spaces
         for (int i = 0; i < actualHeaders.length; i++) {
             //monitor.warning(actualHeaders[i]);
             actualHeaders[i] = actualHeaders[i].trim().replaceAll("[\\n\\r\\t]", "").replaceAll("\\s+", " ");
@@ -917,31 +872,31 @@ public class ProxyController {
 
             String[] values = line.split(",", -1);
 
-            // Ajusta los valores para que coincidan con los headers (si startIndex > 0)
+            // Adjusts values ​​to match headers (if startIndex > 0)
             if (startIndex > 0 && values.length > startIndex) {
                 values = Arrays.copyOfRange(values, startIndex, values.length);
             } else if (startIndex > 0 && values.length <= startIndex) {
-                continue; // No hay suficientes valores para los headers ajustados
+                continue; // Not enough values ​​for the fitted headers
             }
 
-            // Si el número de valores no coincide con el número de encabezados, algo anda mal con la línea.
-            // Esto puede ocurrir con líneas de metadata en el CSV que no son observaciones de datos.
-            if (values.length != actualHeaders.length) { // Usar actualHeaders aquí
-                monitor.warning("La línea CSV tiene un número inconsistente de valores respecto a los encabezados, saltando: " + line);
+            // If the number of values ​​doesn't match the number of headers, something is wrong with the line.
+            // This can occur with metadata lines in the CSV that aren't data observations.
+            if (values.length != actualHeaders.length) {
+                monitor.warning("The CSV line has an inconsistent number of values ​​in the headers, skipping: " + line);
                 continue;
             }
 
             try {
                 ObjectNode obs = objectMapper.createObjectNode();
                 obs.put("@type", "sosa:Observation");
-                // Generar un @id único para la observación
-                String timeValue = values[headersIndex(actualHeaders, "_time")]; // Usar actualHeaders
-                String measurementValue = values[headersIndex(actualHeaders, "_measurement")]; // Usar actualHeaders
-                String deviceIdValue = values[headersIndex(actualHeaders, "deviceId")]; // Usar actualHeaders
-                // Construir un ID más significativo si es posible
+                // Generate a unique @id for the observation
+                String timeValue = values[headersIndex(actualHeaders, "_time")];
+                String measurementValue = values[headersIndex(actualHeaders, "_measurement")];
+                String deviceIdValue = values[headersIndex(actualHeaders, "deviceId")];
+                // Build a more meaningful ID if possible
                 obs.put("@id", "ex:Observation_" + measurementValue + "_" + deviceIdValue + "_" + timeValue.replaceAll("[^a-zA-Z0-9]", ""));
 
-                // Definir el @context dentro de cada observación para auto-contenerse
+                // Define the @context inside each observation to self-contain
                 ObjectNode context = objectMapper.createObjectNode();
                 context.put("sosa", "http://www.w3.org/ns/sosa/");
                 context.put("qudt", "http://qudt.org/vocab/unit/");
@@ -951,15 +906,15 @@ public class ProxyController {
                 obs.set("@context", context);
 
                 // sosa:observedProperty
-                obs.set("sosa:observedProperty", objectMapper.createObjectNode().put("@id", "ex:" + values[headersIndex(actualHeaders, "_measurement")])); // Usar actualHeaders
+                obs.set("sosa:observedProperty", objectMapper.createObjectNode().put("@id", "ex:" + values[headersIndex(actualHeaders, "_measurement")]));
 
                 // sosa:madeBySensor
-                obs.set("sosa:madeBySensor", objectMapper.createObjectNode().put("@id", "ex:" + values[headersIndex(actualHeaders, "deviceId")])); // Usar actualHeaders
+                obs.set("sosa:madeBySensor", objectMapper.createObjectNode().put("@id", "ex:" + values[headersIndex(actualHeaders, "deviceId")]));
 
                 // sosa:resultTime
                 ObjectNode resultTime = objectMapper.createObjectNode();
                 resultTime.put("@type", "xsd:dateTime");
-                resultTime.put("@value", values[headersIndex(actualHeaders, "_time")]); // Usar actualHeaders
+                resultTime.put("@value", values[headersIndex(actualHeaders, "_time")]);
                 obs.set("sosa:resultTime", resultTime);
 
                 // sosa:hasResult
@@ -968,12 +923,11 @@ public class ProxyController {
 
                 ObjectNode hasValue = objectMapper.createObjectNode();
                 hasValue.put("@type", "om:Measure");
-                hasValue.put("om:hasSimpleValue", Double.parseDouble(values[headersIndex(actualHeaders, "_value")])); // Usar actualHeaders
+                hasValue.put("om:hasSimpleValue", Double.parseDouble(values[headersIndex(actualHeaders, "_value")]));
 
-                // Añadir om:hasUnit si existe en los campos CSV
-                int unitIndex = headersIndex(actualHeaders, "unit"); // Usar actualHeaders
+                // Add om:hasUnit if exists
+                int unitIndex = headersIndex(actualHeaders, "unit");
 
-                //monitor.warning("indice para unit");
                 //monitor.warning(String.valueOf(unitIndex));
 
                 if (unitIndex != -1 && unitIndex < values.length) {
@@ -985,7 +939,7 @@ public class ProxyController {
 
                 observations.add(obs);
             } catch (Exception e) {
-                monitor.warning("Fallo al parsear una línea CSV de InfluxDB individual: " + e.getMessage() + ". Línea: " + line);
+                monitor.warning("Failed to parse a single InfluxDB CSV line: " + e.getMessage() + ". Line: " + line);
             }
         }
 
@@ -993,19 +947,19 @@ public class ProxyController {
     }
 
     /**
-     * Busca el índice de una clave en un array de encabezados (case-insensitive).
-     *
-     * @param headers Array de encabezados.
-     * @param key La clave a buscar.
-     * @return El índice de la clave, o -1 si no se encuentra.
-     */
+    * Finds the index of a key in an array of headers (case-insensitive).
+    *
+    * @param headers Array of headers.
+    * @param key The key to find.
+    * @return The index of the key, or -1 if not found.
+    */
     private int headersIndex(String[] headers, String key) {
         //System.out.println("headersIndex: '" + key + "' " + key.length());
         for (int i = 0; i < headers.length; i++) {
             //System.out.println("headersIndex - : '" + headers[i] + "' " + headers[i].length());
             if (headers[i].equalsIgnoreCase(key)) return i;
         }
-        //System.out.println("headersIndex: No Encuentra");
+        //System.out.println("headersIndex: Not found");
         return -1;
     }
 

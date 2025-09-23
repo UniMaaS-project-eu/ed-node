@@ -22,7 +22,6 @@ import org.eclipse.edc.spi.monitor.Monitor;
 import java.util.Set;
 
 class DataAccessCredentialScopeExtractor implements ScopeExtractor {
-    // CAMBIO: Usar DataProcessorCredential para DataAccess constraints
     public static final String DATA_PROCESSOR_CREDENTIAL_TYPE = "DataProcessorCredential";
     private static final String DATA_ACCESS_CONSTRAINT_PREFIX = "DataAccess.";
     private static final String CREDENTIAL_TYPE_NAMESPACE = "org.eclipse.edc.vc.type";

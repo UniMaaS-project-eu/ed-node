@@ -6,13 +6,17 @@ Configure `.env` file, define the host, and exposed ports.
 
 ## 1 - Create Private/Public Key, DID & Vault Config File
 
-To deploy the `issuerservice`, you must first create the private and public keys for the DID document. This folder offers a script (`generateKeysPrivPubVault`) to generate test keys. You can run this script by simply replacing <issuerServiceHost> with your IP:
+To deploy the `issuerservice`, you must first create the private and public keys for the DID document. This folder offers a script (`generateIssuerFiles-KeysDIDVault`) to generate test keys.
 
 ```sh
-cd test/issuerservice-vc;
-./generateKeysPrivPubVault.sh <issuerServiceHost>:9878 <issuerServiceHost>:7391 <issuerServiceHost>:7392 <issuerServiceHost>:8392 issuerservice;
-# ex: ./generateKeysPrivPubVault.sh localhost:9878 localhost:7391 localhost:7392 localhost:8392 issuerservice;
+cd tests/issuerservice-vc;
+./generateIssuerFiles-KeysDIDVault.sh <instanceName> <issuerServiceDIDHost>:<issuerServiceDIDPort>;
+# ex: ./generateIssuerFiles-KeysDIDVault.sh issuerservice localhost:9878;
 ```
+Where:
+
+- <instanceName>: Instance name.
+- <edNodeDIDHost:edNodeDIDPort>: host & port where DID related to the ED-Node can be resolved.
 
 Running the script should create two new folders, `assets` and `vault`, with the following contents:
 

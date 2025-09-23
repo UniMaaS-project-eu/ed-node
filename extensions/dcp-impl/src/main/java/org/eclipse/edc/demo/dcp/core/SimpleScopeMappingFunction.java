@@ -9,12 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Versión simplificada que siempre agrega los scopes necesarios para catalog requests
+ * Simplified version that always adds the necessary scopes for catalog requests
  */
 public class SimpleScopeMappingFunction implements PolicyValidatorRule<RequestPolicyContext> {
     private final Set<String> defaultScopes;
 
-    // Constantes para las credenciales
     private static final String MEMBERSHIP_CREDENTIAL_TYPE = "MembershipCredential";
     private static final String DATA_PROCESSOR_CREDENTIAL_TYPE = "DataProcessorCredential";
     private static final String CREDENTIAL_TYPE_NAMESPACE = "org.eclipse.edc.vc.type";
@@ -28,22 +27,22 @@ public class SimpleScopeMappingFunction implements PolicyValidatorRule<RequestPo
         var requestScopeBuilder = requestPolicyContext.requestScopeBuilder();
         var currentScopes = requestScopeBuilder.build().getScopes();
 
-        // Crear un set con los scopes combinados
+        // Create a set with the combined scopes
         var newScopes = new HashSet<>(currentScopes);
 
-        // Agregar los scopes por defecto
+        // Add the default scopes
         newScopes.addAll(defaultScopes);
 
-        // ESTRATEGIA DIRECTA: Para solicitudes de catálogo, siempre incluir ambos tipos de credenciales
-        // porque los assets individuales pueden tener constraints DataAccess.*
+        // DIRECT STRATEGY: For catalog requests, always include both types of credentials
+        // because individual assets may have DataAccess constraints.*
         if (requestPolicyContext instanceof RequestCatalogPolicyContext) {
             System.out.println("DEBUG: === SIMPLE SCOPE MAPPING FOR CATALOG REQUEST ===");
             
-            // Siempre agregar MembershipCredential para acceso básico
+            // Always add MembershipCredential for basic access
             String membershipScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, MEMBERSHIP_CREDENTIAL_TYPE);
             newScopes.add(membershipScope);
             
-            // Siempre agregar DataProcessorCredential para assets con constraints DataAccess.*
+            // Always add DataProcessorCredential for assets with constraints DataAccess.*
             String dataProcessorScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
             newScopes.add(dataProcessorScope);
             
@@ -54,14 +53,14 @@ public class SimpleScopeMappingFunction implements PolicyValidatorRule<RequestPo
             System.out.println("DEBUG: === SIMPLE SCOPE MAPPING FOR NON-CATALOG REQUEST ===");
             System.out.println("DEBUG: Context type: " + requestPolicyContext.getClass().getSimpleName());
             
-            // Para otras solicitudes, mantener la lógica existente
+            // For other requests, keep the existing logic
             newScopes.addAll(defaultScopes);
         }
 
-        // Actualizar el builder con los nuevos scopes
+        // Update the builder with the new scopes
         requestScopeBuilder.scopes(newScopes);
 
-        // DEBUG: imprimir información de debug
+        // DEBUG
         System.out.println("DEBUG: Default scopes: " + defaultScopes);
         System.out.println("DEBUG: Existing scopes: " + currentScopes);
         System.out.println("DEBUG: Final combined scopes: " + newScopes);

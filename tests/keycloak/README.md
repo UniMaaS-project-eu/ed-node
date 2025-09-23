@@ -40,8 +40,6 @@ Access settings:
 
 ![keycloak-create-client-auth](./img/keycloak-create-client-auth.png)
 
-Pulsar a guardar.
-
 4. Once the client is created, access the "Credentials" tab where:
 - Validate that: `Client Authenticator`="Client Id and Secret"
 - Obtain the `Client secret` value, which will correspond to the value of the "CONNECTOR*_IDENTIHUB_UNIMAAS_OIDC_IDP_CLIENT_SECRET" variable that must be defined for the connector's identityHub.

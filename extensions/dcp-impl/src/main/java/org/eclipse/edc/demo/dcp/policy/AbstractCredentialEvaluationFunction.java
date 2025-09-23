@@ -51,13 +51,13 @@ public class AbstractCredentialEvaluationFunction {
             return Result.failure("ParticipantAgent contains a '%s' claim but it did not contain any VerifiableCredentials.".formatted(VC_CLAIM));
         }
         
-        // Debug de las credenciales encontradas
+        // Debug
         for (int i = 0; i < vcList.size(); i++) {
             var vc = vcList.get(i);
             System.out.println("DIAGNOSTIC: Credential " + i + " types: " + vc.getType());
             System.out.println("DIAGNOSTIC: Credential " + i + " has " + vc.getCredentialSubject().size() + " subjects");
             
-            // Debug adicional de los subjects de cada credencial
+            // Debug subjects credential
             for (int j = 0; j < vc.getCredentialSubject().size(); j++) {
                 var subject = vc.getCredentialSubject().get(j);
                 System.out.println("DIAGNOSTIC: Credential " + i + ", Subject " + j + " ID: " + subject.getId());

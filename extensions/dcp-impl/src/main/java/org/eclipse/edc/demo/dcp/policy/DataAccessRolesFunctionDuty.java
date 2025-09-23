@@ -73,7 +73,7 @@ public class DataAccessRolesFunctionDuty<C extends ParticipantAgentPolicyContext
 //                        var roleList = (List<?>) roles;
 //                        String requiredRole = rightOperand.toString();
 //
-//                        // Solo soportamos EQ (interpreta como "contiene")
+//                        // Only EQ is supported (contained)
 //                        if (operator.equals(Operator.EQ)) {
 //                            return version != null && roleList.contains(requiredRole);
 //                        } else {
@@ -88,7 +88,7 @@ public class DataAccessRolesFunctionDuty<C extends ParticipantAgentPolicyContext
                         var roleList = (List<?>) roles;
                         String requiredRole = rightOperand.toString();
 
-                        // Solo soportamos EQ (interpreta como "contiene")
+                        // Only EQ is supported (contained)
                         if (operator.equals(Operator.EQ)) {
                             return roleList.contains(requiredRole);
                         } else {

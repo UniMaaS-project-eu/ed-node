@@ -30,22 +30,20 @@ Where `<instanceName>` is the Instance Name of the ED-Node (`ED_NODE_INSTANCE_NA
 ## 1 - Create Private/Public Key, DID & Vault Config File
 
 
-To deploy the `ed-node`, you must first create the private and public keys for the DID document. This folder offers a script (`generateKeysPrivPubVault`) to generate test keys. You can run this script by simply replacing <edNodeHost> with your IP and defining <instanceName>
+To deploy the `ed-node`, you must first create the private and public keys for the DID document. This folder offers a script (`generateEDNodeFiles-KeysDIDVault`) to generate test keys.
 
 ```sh
-cd test/issuerservice-vc;
-./generateKeysPrivPubVault.sh <edNodeHost>:9876 <edNodeHost>:7191 <edNodeHost>:7192 <edNodeHost>:8192 <instanceName>;
-# ex: ./generateKeysPrivPubVault.sh localhost:9876 localhost:7191 localhost:7192 localhost:8192 connector1;
+./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <edNodeDIDHost>:<edNodeDIDPort> <edNodeCredServHost>:<edNodeCredServPort> <edNodeIdentityHost>:<edNodeIdentityPort> <edNodeDSPHost>:<edNodeDSPPort>;
+# ex: ./generateEDNodeFiles-KeysDIDVault.sh connector1 localhost:9876 localhost:7191 localhost:7192 localhost:8192;
 ```
 
 Where:
 
-- <hostDID:portDID>: host & port where DID related to the ED-Node can be resolved.
-- <hostCredentialService:portCredentialService>: host & port exposed by ED-Node to where `/api/credentials/` endpoints are accessible (see `IH_HOST` and `IH_CREDENTIALS_PORT` parameters of `.env` file).
-- <hostIdentityHub:portIdentityHub>: host & port exposed by ED-Node to where `/api/identity` endpoints are accessible (see `IH_HOST` and `IH_IDENTITY_PORT` parameters of `.env` file).
-- <hostConnectorDSP:portConnectorDSP>: host & port exposed by ED-Node to where `/api/dsp` endpoints are accessible (see `CONNECTOR_HOST` and `CONNECTOR_CALLBACK_PORT` parameters of `.env` file).
 - <instanceName>: Instance name (see `ED_NODE_INSTANCE_NAME` parameter of `.env` file).
-
+- <edNodeDIDHost:edNodeDIDPort>: host & port where DID related to the ED-Node can be resolved.
+- <edNodeCredServHost:edNodeCredServPort>: host & port exposed by ED-Node to where `/api/credentials/` endpoints are accessible (see `IH_HOST` and `IH_CREDENTIALS_PORT` parameters of `.env` file).
+- <edNodeIdentityHost:edNodeIdentityPort>: host & port exposed by ED-Node to where `/api/identity` endpoints are accessible (see `IH_HOST` and `IH_IDENTITY_PORT` parameters of `.env` file).
+- <edNodeDSPHost:edNodeDSPPort>: host & port exposed by ED-Node to where `/api/dsp` endpoints are accessible (see `CONNECTOR_HOST` and `CONNECTOR_CALLBACK_PORT` parameters of `.env` file).
 
 Running the script should create two new folders, `assets` and `vault`, with the following contents:
 
@@ -174,7 +172,8 @@ cp .env-template .env-<instanceName>
 
 For instance:
 ```sh
-./generateKeysPrivPubVault.sh 192.168.1.110:9877 192.168.1.110:7291 192.168.1.110:7292 192.168.1.110:8292 connector2;
+./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <edNodeDIDHost>:<edNodeDIDPort> <edNodeCredServHost>:<edNodeCredServPort> <edNodeIdentityHost>:<edNodeIdentityPort> <edNodeDSPHost>:<edNodeDSPPort>;
+# ex: ./generateEDNodeFiles-KeysDIDVault.sh connector2 localhost:9877 localhost:7291 localhost:7292 localhost:8292 ;
 ```
 
 **NOTE:** Considering both ED-Nodes will be in same machine you will have to change exposed ports and asing a new `InstanceName` (`connector2`), else you need to change the host too.

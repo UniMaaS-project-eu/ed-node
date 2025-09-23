@@ -41,12 +41,12 @@ public class PolicyEvaluationExtension implements ServiceExtension {
     @Override
     public void initialize(ServiceExtensionContext context) {
 
-        // `bindPermissionFunction` se usa para ligar una función llamada MembershipCredentialEvaluationFunction a los permisos.
-        // - Esta función de evaluación revisa si el consumidor de datos tiene una credencial de membresía válida. 
-        // - En este caso se usa en los contextos de TransferProcess, ContractNegotiation y Catalog.
-        // - Funcionalidad: Antes de que se te permita negociar un contrato, catalogar un activo, o iniciar una transferencia, 
-        //                  el sistema de políticas ejecutará esta función para determinar si tienes el permiso de membresía necesario. 
-        //                  Si la función devuelve un resultado negativo, la operación es denegada. Esta es una evaluación de permiso
+        // `bindPermissionFunction` is used to bind a function called MembershipCredentialEvaluationFunction to permissions.
+        // - This evaluation function checks if the data consumer has a valid membership credential.
+        // - In this case, it is used in the contexts of TransferProcess, ContractNegotiation, and Catalog.
+        // - Functionality: Before you are allowed to negotiate a contract, catalog an asset, or initiate a transfer,
+        //                  the policy system will execute this function to determine if you have the necessary membership permission.
+        //                  If the function returns a negative result, the operation is denied. This is a permission evaluation
 
         bindPermissionFunction(MembershipCredentialEvaluationFunction.create(), TransferProcessPolicyContext.class, TransferProcessPolicyContext.TRANSFER_SCOPE, MEMBERSHIP_CONSTRAINT_KEY);
         bindPermissionFunction(MembershipCredentialEvaluationFunction.create(), ContractNegotiationPolicyContext.class, ContractNegotiationPolicyContext.NEGOTIATION_SCOPE, MEMBERSHIP_CONSTRAINT_KEY);
@@ -56,17 +56,17 @@ public class PolicyEvaluationExtension implements ServiceExtension {
 
         registerDataAccessRolesFunction();
 
-        // Resumen:
-        // - bindPermissionFunction es la puerta de entrada. Determina si eres digno de pasar. Tu código usa MembershipCredentialEvaluationFunction para verificar si tienes la membresía requerida 
-        //   antes de permitirte continuar con un proceso (negociación, transferencia, etc.).
-        // - bindDutyFunction es la lista de tareas que debes completar una vez que has pasado la puerta. Tu código usa DataAccessLevelFunction para ejecutar una acción obligatoria, 
-        //   como asegurar un cierto nivel de acceso a los datos, después de que se ha otorgado el permiso.
+        // Summary:
+        // - bindPermissionFunction is the gateway. It determines if you are worthy of passing. Your code uses MembershipCredentialEvaluationFunction to check if you have the required membership
+        //   before allowing you to continue with a process (negotiation, transfer, etc.).
+        // - bindDutyFunction is the list of tasks you must complete once you have passed through the gate. Your code uses DataAccessLevelFunction to execute a mandatory action,
+        //  such as ensuring a certain level of access to data, after permission has been granted.
 
-        // `bindDutyFunction` se utiliza para ligar una función diferente, DataAccessLevelFunction, a los deberes.
-        // - Esta función se activa cuando se debe cumplir una obligación. Por ejemplo, si una política de datos establece que debes anonimizar los datos (DataAccess.level = "anonimizado") después de usarlos, 
-        //   esta función se encargará de ejecutar esa lógica.
-        // - Funcionalidad: A diferencia del permiso, que determina si la acción es posible, el deber define una acción que debe ser realizada como parte de un acuerdo. 
-        //                  El sistema no deniega la operación, sino que exige que se complete esta tarea.
+        // `bindDutyFunction` is used to bind a different function, DataAccessLevelFunction, to duties.
+        // - This function is triggered when an obligation must be fulfilled. For example, if a data policy states that you must anonymize data (DataAccess.level = "anonymized") after use,
+        //   this function will be responsible for executing that logic.
+        // - Functionality: Unlike permission, which determines whether an action is possible, duty defines an action that must be performed as part of an agreement.
+        //                  The system does not deny the operation, but rather requires that the task be completed.
 
     }
 

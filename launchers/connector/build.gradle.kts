@@ -20,7 +20,7 @@ plugins {
 
 dependencies {
     //Controlplane
-//    runtimeOnly(project(":extensions:did-example-resolver")) --> NO SE USA REEMPLAZADO POR "vault-ini.sh"
+//    runtimeOnly(project(":extensions:did-example-resolver")) --> NOT USED REPLACED BY "vault-ini.sh"
     runtimeOnly(project(":extensions:dcp-impl")) // some patches/impls for DCP
 //    runtimeOnly(project(":extensions:catalog-node-resolver")) // to trigger the federated catalog
 
@@ -60,7 +60,7 @@ dependencies {
 
     runtimeOnly(libs.edc.api.secrets)
 
-    // Para TokenDecorator y interceptación de mensajes
+    // For TokenDecorator and message interception
     implementation(libs.edc.token.spi)    
     implementation(libs.edc.core.spi)
 
@@ -88,7 +88,7 @@ dependencies {
     //implementation(libs.edc.data.plane.public.api)
     implementation(libs.edc.data.plane.spi)
 
-    // ################### Transfer capabilities (para actuar como consumer) ###################
+    // ################### Transfer capabilities (to act as consumer) ###################
     implementation(libs.edc.transfer.data.plane.signaling)
     implementation(libs.edc.edr.cache.api)
     implementation(libs.edc.edr.store.core)
@@ -120,20 +120,20 @@ dependencies {
 
     // --------------------------------------------- 3-new    ---------------------------------------------------------------
 
-    // ################### SQL persistence para dataplane ###################
+    // ################### SQL persistence for dataplane ###################
     implementation(libs.edc.sql.dataplane.instancestore)
 
-    // ################### PostgreSQL SQL persistence (opcional) ###################
-    // Transaction support - DEBE IR ANTES que sql-core
+    // ################### PostgreSQL SQL persistence (optional) ###################
+    // Transaction support - MUST GO BEFORE sql-core
     implementation(libs.edc.transaction.local)
     // SQL core
     implementation(libs.edc.sql.core)
-    //implementation(libs.edc.sql.schema) // Opcional, para validación de esquema (falla no existe)
+    //implementation(libs.edc.sql.schema) // Optional, for schema validation (fails, does not exist)
     // Connection pool
     implementation(libs.edc.sql.pool.apache.commons)
-    // Driver PostgreSQL
+    // PostgreSQL driver
     implementation(libs.postgresql.driver)
-    // Para migración automática de esquemas (opcional pero recomendado)
+    // For automatic schema migration (optional but recommended)
     implementation(libs.edc.sql.bootstrapper)
     implementation(libs.edc.asset.index.sql)
     // SQL dependencies    
@@ -144,14 +144,14 @@ dependencies {
 
     // --------------------------------------------- 4-end    ---------------------------------------------------------------
 
-    // Para soporte completo de IAM (remote STS client)
+    // For full IAM support (remote STS client)
     //implementation(libs.edc.iam.mock)
-    // ################### OAuth2 Client - NECESARIO para STS Remote Client ###################
+    // ################### OAuth2 Client - REQUIRED for STS Remote Client ###################
     implementation(libs.edc.oauth2.client)
     implementation(libs.edc.sts.remote.client)
     //implementation(libs.edc.iam.mock)
 
-    // Para soporte Hashicorp Vault
+    // For Hashicorp Vault support
     runtimeOnly(libs.edc.vault.hashicorp)
 
     println("This runtime compiles with a remote STS client, Hashicorp Vault and PostgreSQL. You will need properly configured Postgres and HCV instances.")

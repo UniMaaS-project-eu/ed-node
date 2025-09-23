@@ -33,14 +33,14 @@ dependencies {
     implementation(libs.jakarta.rs.api)
     implementation(libs.jakarta.json.api)
     
-    // Verifiable Credentials SPI - para VerifiableCredential y VerifiablePresentation
+    // Verifiable Credentials SPI - for VerifiableCredential y VerifiablePresentation
     implementation(libs.edc.ih.spi.credentials)
     implementation(libs.edc.ih.api.presentation)
     
-    // Core SPI - para Result, Monitor, etc.
+    // Core SPI - for Result, Monitor, etc.
     implementation(libs.edc.core.spi)
 
-    // HTTP SPI - NECESARIO para HttpRequestParamsProvider
+    // HTTP SPI - REQUIRED by HttpRequestParamsProvider
     implementation(libs.edc.http)
         
 

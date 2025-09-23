@@ -78,23 +78,23 @@ public class DcpPatchExtension implements ServiceExtension {
         // register dataspace issuer --> connector needs publickey of issuerservice for credential validations.
         trustedIssuerRegistry.register(new Issuer(issuerDID, Map.of()), WILDCARD);
 
-        // IMPORTANTE: Crear DefaultScopeMappingFunction que:
-        // 1. Incluye los default scopes básicos para acceso al catálogo
-        // 2. Captura y agrega scopes extra del Connector
-        // 3. Mantiene compatibilidad con DataAccessCredentialScopeExtractor
+        // IMPORTANT: Create a DefaultScopeMappingFunction that:
+        // 1. Includes the basic default scopes for catalog access
+        // 2. Captures and adds extra scopes from the Connector
+        // 3. Maintains compatibility with DataAccessCredentialScopeExtractor
         //var defaultScopes = Set.of("org.eclipse.edc.vc.type:MembershipCredential:read", "org.eclipse.edc.vc.type:DataProcessorCredential:read");
         var defaultScopes = Set.of("org.eclipse.edc.vc.type:MembershipCredential:read");
         
-        // OPCIÓN 1: Usar la versión compleja con análisis de políticas (para debug)
+        // OPTION 1: Use the complex version with policy analysis (for debugging)
         var scopeMappingFunction = new DefaultScopeMappingFunction(defaultScopes, enableDataProcessorForCatalog);
 
-        // OPCIÓN 2: Usar la versión simplificada que siempre agrega ambas credenciales para catálogo
+        // OPCIÓN 2: Use the simplified version that always adds both credentials to the catalog
         //var scopeMappingFunction = new SimpleScopeMappingFunction(defaultScopes);
 
-        // Registrar como PostValidator para todos los contextos
-        // ORDEN IMPORTANTE: PostValidator se ejecuta DESPUÉS del ScopeExtractor
-        // Esto permite que primero DataAccessCredentialScopeExtractor agregue sus scopes
-        // y luego DefaultScopeMappingFunction agregue los default + extra scopes
+        // Register as PostValidator for all contexts
+        // IMPORTANT ORDER: PostValidator runs AFTER ScopeExtractor
+        // This allows DataAccessCredentialScopeExtractor to add its scopes first
+        // and then DefaultScopeMappingFunction to add the default + extra scopes
         System.out.println("DEBUG: Registering DefaultScopeMappingFunction for all policy contexts");
         
         policyEngine.registerPostValidator(RequestCatalogPolicyContext.class, scopeMappingFunction::apply);
@@ -102,8 +102,8 @@ public class DcpPatchExtension implements ServiceExtension {
         policyEngine.registerPostValidator(RequestTransferProcessPolicyContext.class, scopeMappingFunction::apply);
         policyEngine.registerPostValidator(RequestVersionPolicyContext.class, scopeMappingFunction::apply);
 
-        // register scope extractor - esto se ejecuta ANTES del PostValidator
-        // DataAccessCredentialScopeExtractor agrega scopes basados en políticas (DataAccess.*)
+        // register scope extractor - this runs BEFORE the PostValidator
+        // DataAccessCredentialScopeExtractor adds policy-based scopes (DataAccess.*)
         System.out.println("DEBUG: Registering DataAccessCredentialScopeExtractor");
         scopeExtractorRegistry.registerScopeExtractor(new DataAccessCredentialScopeExtractor(monitor));
 

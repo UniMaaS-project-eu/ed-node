@@ -72,7 +72,6 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     private final Set<String> defaultScopes;
     private final boolean enableDataProcessorForCatalog;
 
-    // Nuevas constantes para DataProcessor credential
     private static final String DATA_PROCESSOR_CREDENTIAL_TYPE = "DataProcessorCredential";
     private static final String DATA_ACCESS_CONSTRAINT_PREFIX = "DataAccess.";
     private static final String CREDENTIAL_TYPE_NAMESPACE = "org.eclipse.edc.vc.type";
@@ -91,21 +90,21 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
         var requestScopeBuilder = requestPolicyContext.requestScopeBuilder();
         var currentScopes = requestScopeBuilder.build().getScopes();
 
-        // 1️⃣ Crear un set con los scopes por defecto
+        // 1️⃣ Create a set with the default scopes
         var newScopes = new HashSet<>(defaultScopes);
 
-        // 2️⃣ Añadir los scopes actuales (ya procesados por ScopeExtractor)
+        // 2️⃣ Add the current scopes (already processed by ScopeExtractor)
         newScopes.addAll(currentScopes);
 
-        // 3️⃣ NUEVO: Analizar la política para detectar constraints DataAccess.*
+        // 3️⃣ Analyze the policy to detect DataAccess constraints
         Set<String> policyScopesFromConstraints = extractScopesFromPolicyConstraints(policy);
         newScopes.addAll(policyScopesFromConstraints);
 
-        // 4️⃣ Extraer scopes del token y añadirlos
+        // 4️⃣ Extract scopes from the token and add them
         Set<String> tokenJWTScopes = extractScopesFromTokenJWT(requestPolicyContext);
         newScopes.addAll(tokenJWTScopes);
 
-        // 5️⃣ Actualizar requestScopeBuilder
+        // 5️⃣ Actualize requestScopeBuilder
         requestScopeBuilder.scopes(newScopes);
 
         // DEBUG: imprimir todos los scopes
@@ -121,7 +120,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }*/
 
     /**
-    * Detecta si es una solicitud de catálogo
+    * Detects if it is a catalog request
     */
     private boolean isCatalogRequest(RequestPolicyContext context) {
         String className = context.getClass().getSimpleName();
@@ -131,15 +130,15 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-    * Agrega scopes comunes que pueden necesitarse para solicitudes de catálogo
+    * Adds common scopes that may be needed for catalog requests
     */
     private void addCommonCatalogScopes(Set<String> scopes) {
-        // Puedes agregar aquí otros tipos de credenciales que normalmente se necesitan
-        // para visualizar diferentes tipos de assets en el catálogo
-            
-        // Ejemplo: Si tienes otros tipos de credenciales específicas para ciertos assets
+        // You can add other types of credentials that are normally needed here
+        // to view different types of assets in the catalog
+
+        // Example: If you have other types of credentials specific to certain assets
         // scopes.add(String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, "OtherCredentialType"));
-            
+
         //System.out.println("DEBUG: Common catalog scopes added (if any)");
     }
 
@@ -152,36 +151,35 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
         var requestScopeBuilder = requestPolicyContext.requestScopeBuilder();
         var currentScopes = requestScopeBuilder.build().getScopes();
 
-        // 1️⃣ Crear un set con los scopes por defecto
+        // 1️⃣ Create a set with the default scopes
         var newScopes = new HashSet<>(defaultScopes);
 
-        // 2️⃣ Añadir los scopes actuales (ya procesados por ScopeExtractor)
+        // 2️⃣ Add the current scopes (already processed by ScopeExtractor)
         newScopes.addAll(currentScopes);
 
-        // 3️⃣ NUEVO: Estrategia basada en el tipo de contexto
+        // 3️⃣ Strategy based on the type of context
         if (enableDataProcessorForCatalog && isCatalogRequest(requestPolicyContext)) {
-            // Para solicitudes de catálogo, agregar DataProcessorCredential preventivamente
+            // For catalog requests, add DataProcessorCredential preemptively
             String dataProcessorScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
             newScopes.add(dataProcessorScope);
             System.out.println("DEBUG: Added DataProcessorCredential scope for catalog request");
             
-            // También agregar otros scopes comunes que podrían necesitarse para visualizar assets
-            // Esto es configurable según tus necesidades
+            // You can also add other common scopes that might be needed to view assets. This can be configured to suit your needs.
             addCommonCatalogScopes(newScopes);
         }
 
-        // 4️⃣ Analizar la política para detectar constraints DataAccess.* (para otros contextos)
+        // 4️⃣ Analyze the policy to detect constraints DataAccess.* (for other contexts)
         Set<String> policyScopesFromConstraints = extractScopesFromPolicyConstraints(policy);
         newScopes.addAll(policyScopesFromConstraints);
 
-        // 5️⃣ Extraer scopes del token y añadirlos
+        // 5️⃣ Extract scopes from the token and add them
         Set<String> tokenJWTScopes = extractScopesFromTokenJWT(requestPolicyContext);
         newScopes.addAll(tokenJWTScopes);
 
-        // 6️⃣ Actualizar requestScopeBuilder
+        // 6️⃣ Actualize requestScopeBuilder
         requestScopeBuilder.scopes(newScopes);
 
-        // DEBUG: imprimir todos los scopes
+        // DEBUG
         System.out.println("DEBUG: === SCOPE MAPPING FUNCTION ===");
         System.out.println("DEBUG: Default scopes: " + defaultScopes);
         System.out.println("DEBUG: Existing scopes (from ScopeExtractor): " + currentScopes);
@@ -193,8 +191,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * NUEVA FUNCIÓN: Analiza las políticas para encontrar constraints DataAccess.*
-     * y genera los scopes apropiados para DataProcessorCredential
+     * Analyzes policies to find DataAccess.* constraints and generates appropriate scopes for DataProcessorCredential
      */
     private Set<String> extractScopesFromPolicyConstraints(Policy policy) {
         Set<String> scopesFromConstraints = new HashSet<>();
@@ -210,10 +207,9 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
         }
         
         try {
-            // DEBUG: Imprimir información general de la política
             System.out.println("DEBUG: Policy toString: " + policy.toString());
             
-            // Analizar permisos de la política
+            // Analyze policy permissions
             var permissions = policy.getPermissions();
             System.out.println("DEBUG: Policy permissions: " + (permissions != null ? permissions.size() : "null"));
             
@@ -231,7 +227,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             Constraint constraint = constraints.get(j);
                             System.out.println("DEBUG: Processing constraint " + j + ": " + constraint);
                             
-                            // Usar reflection para obtener leftOperand ya que los métodos pueden variar
+                            // Use reflection to get leftOperand as methods may vary
                             String leftOperand = getConstraintLeftOperandSafely(constraint);
                             System.out.println("DEBUG: Extracted leftOperand: " + leftOperand);
 
@@ -239,7 +235,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             if (leftOperand != null) {
                                 System.out.println("DEBUG: Found constraint leftOperand: " + leftOperand);
                                 
-                                // Si el constraint empieza con "DataAccess.", necesitamos DataProcessorCredential
+                                // If the constraint starts with "DataAccess.", we need DataProcessorCredential
                                 if (leftOperand.startsWith(DATA_ACCESS_CONSTRAINT_PREFIX)) {
                                     String dataProcessorScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
                                     scopesFromConstraints.add(dataProcessorScope);
@@ -256,8 +252,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                 }
             }
             
-            // También analizar deberes (duties) si los hay
-            // Usar reflection para obtener duties de forma segura
+            // Also analyze duties, if any. Use reflection to safely obtain duties.
             var duties = getPolicyDutiesSafely(policy);
             System.out.println("DEBUG: Policy duties: " + (duties != null ? duties.size() : "null"));
             
@@ -282,14 +277,13 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                 });
             }
             
-//            // NUEVA ESTRATEGIA: Si no encontramos nada, buscar en el contexto
-//            // porque la política del catálogo puede no contener los constraints de assets específicos
+//            // If we don't find anything, search the context
+//            // because the catalog policy may not contain the constraints for specific assets
 //            if (scopesFromConstraints.isEmpty()) {
 //                System.out.println("DEBUG: No constraints found in policy, applying fallback strategy");
 //                System.out.println("DEBUG: Adding DataProcessorCredential scope as fallback for catalog requests");
 //                
-//                // Para solicitudes de catálogo, siempre incluir DataProcessorCredential
-//                // porque los assets pueden tener constraints DataAccess.*
+//                // For catalog requests, always include DataProcessorCredential because assets may have constraints DataAccess.*
 //                String dataProcessorScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
 //                scopesFromConstraints.add(dataProcessorScope);
 //                System.out.println("DEBUG: Added DataProcessorCredential scope as catalog fallback");
@@ -305,7 +299,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
     
     /**
-     * Obtiene el leftOperand de un constraint de forma segura usando reflection
+     * Get the leftOperand of a constraint safely using reflection
      */
     private String getConstraintLeftOperandSafely(Constraint constraint) {
         try {
@@ -313,7 +307,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
             System.out.println("DEBUG: Constraint class: " + constraint.getClass().getName());
             System.out.println("DEBUG: Constraint toString: " + constraint.toString());
 
-            // Listar todos los métodos disponibles
+            // List all available methods
             java.lang.reflect.Method[] methods = constraint.getClass().getMethods();
             for (java.lang.reflect.Method method : methods) {
                 if (method.getName().contains("left") || method.getName().contains("Left") || 
@@ -322,7 +316,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                 }
             }
 
-            // Intentar diferentes nombres de método que podrían existir
+            // Try different method names that might exist
             String[] methodNames = {"getLeftOperand", "leftOperand", "getLeft", "left"};
             
             for (String methodName : methodNames) {
@@ -333,7 +327,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                         return result.toString();
                     }
                 } catch (Exception ignored) {
-                    // Continuar con el siguiente método
+                    // Next Method
                 }
             }
             
@@ -344,12 +338,12 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
     
     /**
-     * Obtiene los duties de una policy de forma segura usando reflection
+     * Get the duties of a policy safely using reflection
      */
     @SuppressWarnings("unchecked")
     private java.util.List<org.eclipse.edc.policy.model.Duty> getPolicyDutiesSafely(Policy policy) {
         try {
-            // Intentar diferentes nombres de método que podrían existir
+            // Try different method names that might exist
             String[] methodNames = {"getDuties", "duties", "getObligations", "obligations"};
             
             for (String methodName : methodNames) {
@@ -360,7 +354,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                         return (java.util.List<org.eclipse.edc.policy.model.Duty>) result;
                     }
                 } catch (Exception ignored) {
-                    // Continuar con el siguiente método
+                    // Next Method
                 }
             }
             
@@ -371,12 +365,12 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
     
     /**
-     * Obtiene los constraints de un duty de forma segura usando reflection
+     * Get the constraints of a duty safely using reflection
      */
     @SuppressWarnings("unchecked")
     private java.util.List<Constraint> getDutyConstraintsSafely(org.eclipse.edc.policy.model.Duty duty) {
         try {
-            // Intentar diferentes nombres de método que podrían existir
+            // Try different method names that might exist
             String[] methodNames = {"getConstraints", "constraints", "getConstraint", "constraint"};
             
             for (String methodName : methodNames) {
@@ -387,7 +381,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                         return (java.util.List<Constraint>) result;
                     }
                 } catch (Exception ignored) {
-                    // Continuar con el siguiente método
+                    // Next Method
                 }
             }
             
@@ -398,30 +392,28 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Extrae los scopes del token 
-     * Compatible con EDC 0.14.0 usando la API disponible
+     * Extraxt token scopes
      */
     private Set<String> extractScopesFromTokenJWT(RequestPolicyContext context) {
         System.out.println("DEBUG: Extracting scopes from JWT token...");
         
         try {
-            // En EDC 0.14.0, necesitamos usar diferentes estrategias basadas en la API disponible
-            
-            // Estrategia 1: Buscar en el ClaimToken del contexto
+                        
+            // Strategy 1: Search the context's ClaimToken
             Set<String> scopesFromClaimToken = extractScopesFromClaimToken(context);
             if (!scopesFromClaimToken.isEmpty()) {
                 System.out.println("DEBUG: Found scopes in ClaimToken: " + scopesFromClaimToken);
                 return scopesFromClaimToken;
             }
 
-            // Estrategia 2: Intentar acceder al participantAgent via reflection (cuidadoso)
+            // Strategy 2: Try to access the participantAgent via reflection
             Set<String> scopesFromParticipantAgent = extractScopesFromParticipantAgentSafe(context);
             if (!scopesFromParticipantAgent.isEmpty()) {
                 System.out.println("DEBUG: Found scopes in participantAgent: " + scopesFromParticipantAgent);
                 return scopesFromParticipantAgent;
             }
 
-            // Estrategia 3: Buscar en propiedades del contexto que puedan estar expuestas
+            // Strategy 3: Search for properties of the context that may be exposed
             Set<String> scopesFromContextProperties = extractScopesFromContextProperties(context);
             if (!scopesFromContextProperties.isEmpty()) {
                 System.out.println("DEBUG: Found scopes in context properties: " + scopesFromContextProperties);
@@ -438,18 +430,18 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Busca ClaimToken en el contexto usando métodos disponibles en EDC 0.14.0
+     * Look up ClaimToken in context using methods available in EDC 0.14.0
      */
     private Set<String> extractScopesFromClaimToken(RequestPolicyContext context) {
         try {
-            // En EDC 0.14.0, el ClaimToken podría estar disponible a través de diferentes métodos
-            // Intentamos acceder de forma segura usando reflection
+            // In EDC 0.14.0, the ClaimToken could be available through different methods
+            // We try to access it safely using reflection
             
             java.lang.reflect.Method[] methods = context.getClass().getMethods();
             for (java.lang.reflect.Method method : methods) {
                 String methodName = method.getName();
                 
-                // Buscar métodos que puedan devolver ClaimToken
+                // Find methods that can return ClaimToken
                 if ((methodName.contains("Claim") || methodName.contains("Token") || 
                      methodName.contains("Agent") || methodName.contains("Identity")) &&
                     method.getParameterCount() == 0) {
@@ -461,7 +453,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             return extractScopesFromClaimTokenObject(claimToken);
                         }
                     } catch (Exception ignored) {
-                        // Continuar con el siguiente método
+                        // Next method
                     }
                 }
             }
@@ -474,12 +466,12 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Extrae scopes de un ClaimToken usando la API de EDC 0.14.0
+     * Extract scopes from a ClaimToken using the EDC 0.14.0 API
      */
     private Set<String> extractScopesFromClaimTokenObject(ClaimToken claimToken) {
         try {
-            // En EDC 0.14.0, ClaimToken podría tener diferentes métodos para acceder al token
-            // Intentamos varios nombres posibles
+            // In EDC 0.14.0, ClaimToken could have different methods to access the token
+            // We tried several possible names
             
             java.lang.reflect.Method[] methods = claimToken.getClass().getMethods();
             for (java.lang.reflect.Method method : methods) {
@@ -496,15 +488,15 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             return extractScopesFromJwtString((String) tokenValue);
                         }
                     } catch (Exception ignored) {
-                        // Continuar con el siguiente método
+                        // Next method
                     }
                 }
             }
 
-            // Intentar acceder a los claims directamente
+            // Trying to access the claims directly
             Map<String, Object> claims = claimToken.getClaims();
             if (claims != null) {
-                // Buscar scope en los claims
+                // Search scope in claims
                 Object scopeClaim = claims.get("scope");
                 if (scopeClaim != null) {
                     return parseScopeString(scopeClaim.toString());
@@ -535,11 +527,11 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Intenta acceder al participantAgent de forma segura usando reflection
+     * Attempt to access the participantAgent safely using reflection
      */
     private Set<String> extractScopesFromParticipantAgentSafe(RequestPolicyContext context) {
         try {
-            // Buscar métodos que puedan devolver el participantAgent
+            // Find methods that can return the participantAgent
             java.lang.reflect.Method[] methods = context.getClass().getMethods();
             for (java.lang.reflect.Method method : methods) {
                 String methodName = method.getName();
@@ -551,7 +543,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             return extractScopesFromParticipantAgentObject(participantAgent);
                         }
                     } catch (Exception ignored) {
-                        // Continuar
+                        // Continue
                     }
                 }
             }
@@ -564,18 +556,18 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Extrae scopes del objeto participantAgent
+     * Extract scopes from the participantAgent object
      */
     private Set<String> extractScopesFromParticipantAgentObject(Object participantAgent) {
         try {
             System.out.println("DEBUG: Found participantAgent of type: " + participantAgent.getClass().getSimpleName());
 
-            // Si es un ClaimToken
+            // If a ClaimToken
             if (participantAgent instanceof ClaimToken) {
                 return extractScopesFromClaimTokenObject((ClaimToken) participantAgent);
             }
 
-            // Si es un Map
+            // If a Map
             if (participantAgent instanceof Map) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> agentMap = (Map<String, Object>) participantAgent;
@@ -591,7 +583,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                 }
             }
 
-            // Intentar acceder a propiedades via reflection
+            // Trying to access properties via reflection
             java.lang.reflect.Method[] methods = participantAgent.getClass().getMethods();
             for (java.lang.reflect.Method method : methods) {
                 String methodName = method.getName();
@@ -611,7 +603,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             }
                         }
                     } catch (Exception ignored) {
-                        // Continuar
+                        // Continue
                     }
                 }
             }
@@ -624,23 +616,23 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Busca scopes en propiedades del contexto usando reflection cuidadosa
+     * Search for scopes in context properties using careful reflection
      */
     private Set<String> extractScopesFromContextProperties(RequestPolicyContext context) {
         try {
             System.out.println("DEBUG: Attempting to find context properties...");
             
-            // Buscar métodos que puedan exponer datos del contexto
+            // Find methods that can expose context data
             java.lang.reflect.Method[] methods = context.getClass().getMethods();
             for (java.lang.reflect.Method method : methods) {
                 String methodName = method.getName();
                 
-                // Buscar métodos getter que puedan contener información del contexto
+                // Look for getter methods that may contain context information
                 if (methodName.startsWith("get") && method.getParameterCount() == 0) {
                     try {
                         Object result = method.invoke(context);
                         
-                        // Si el resultado es un Map, buscar scopes
+                        // If the result is a Map, search for scopes
                         if (result instanceof Map) {
                             @SuppressWarnings("unchecked")
                             Map<String, Object> map = (Map<String, Object>) result;
@@ -652,13 +644,13 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             }
                         }
                         
-                        // Si el resultado contiene scope information
+                        // If the result contains scope information
                         if (result != null && result.toString().contains("scope")) {
                             System.out.println("DEBUG: Found potential scope info in " + methodName + ": " + result);
                         }
                         
                     } catch (Exception ignored) {
-                        // Continuar silenciosamente
+                        // Continue
                     }
                 }
             }
@@ -671,7 +663,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Busca scopes en un Map
+     * Search for scopes on a Map
      */
     private Set<String> extractScopesFromMap(Map<String, Object> map) {
         String[] scopeKeys = {"scope", "scopes", "extra_scope", "extraScope", "additionalScope"};
@@ -693,7 +685,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Extrae scopes de un string JWT
+     * Extract scopes from a JWT string
      */
     private Set<String> extractScopesFromJwtString(String jwtToken) {
         if (jwtToken == null || jwtToken.trim().isEmpty()) {
@@ -733,7 +725,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     }
 
     /**
-     * Parsea un string de scopes separados por espacios
+     * Parse a string of scopes separated by spaces
      */
     private Set<String> parseScopeString(String scopeString) {
         if (scopeString == null || scopeString.trim().isEmpty()) {

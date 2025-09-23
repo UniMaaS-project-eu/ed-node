@@ -107,7 +107,7 @@ public class ParticipantContextSeedExtension implements ServiceExtension {
         participantContextService.createParticipantContext(ParticipantManifest.Builder.newInstance()
                         .participantId(superUserParticipantId)
                         .did("did:web:%s".formatted(superUserParticipantId))
-                        .active(true) // en el manifest, pero aún no basta
+                        .active(true)
                         .key(KeyDescriptor.Builder.newInstance()
                                 .keyGeneratorParams(Map.of("algorithm", "EdDSA", "curve", "Ed25519"))
                                 .keyId("%s-key".formatted(superUserParticipantId))
@@ -116,7 +116,7 @@ public class ParticipantContextSeedExtension implements ServiceExtension {
                         .roles(List.of(ServicePrincipal.ROLE_ADMIN))
                         .build())
                 .onSuccess(generatedKey -> {
-                    // 🔹 Activar explícitamente el participante
+                    // 🔹 Participant Activation
                     participantContextService.updateParticipant(superUserParticipantId, pc -> pc.activate())
                             .onSuccess(v -> monitor.info("Super-user '%s' ACTIVATED".formatted(superUserParticipantId)))
                             .onFailure(f -> monitor.warning("Could not activate super-user '%s': %s".formatted(superUserParticipantId, f.getFailureDetail())));
