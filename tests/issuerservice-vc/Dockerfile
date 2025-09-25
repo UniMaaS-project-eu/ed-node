@@ -24,9 +24,9 @@ RUN pip install --no-cache-dir /wheels/*
 
 COPY tests/issuerservice-vc/main.py .
 
-EXPOSE 8080
+EXPOSE 9090
 
-ENV ISSUER_DID="did:web:localhost%3A9876:issuerservice" \
+ENV ISSUER_DID="did:web:localhost%3A9876:issuerservicevc" \
     PRIVATE_KEY_PATH="/app/keys/issuer_private.pem" \
     EXPIRY_DAYS="365"
 
@@ -36,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD \
   urllib.request.urlopen(url).read(); \
   sys.exit(0)" || exit 1
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9090"]

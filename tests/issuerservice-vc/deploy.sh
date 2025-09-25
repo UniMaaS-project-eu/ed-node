@@ -23,12 +23,11 @@ if [[ "$INSTANCE_NAME" == "-h" || "$INSTANCE_NAME" == "--help" ]]; then
   echo
   echo "Manages a Docker Compose instance by giving it a unique project name."
   echo "The script performs the following actions:"
-  echo "1. Exports variables from the '.env-<instance_name>' file."
-  echo "2. Generates a 'docker-compose-<instance_name>.yml' file from a template."
-  echo "3. Generates a 'nginx--<instance_name>.conf' file from a template."
-  echo "4. Executes 'docker-compose down' command based on the specified mode, affecting only the specified project."
-  echo "5. Builds the images for the specified project."
-  echo "6. Lifts the containers in 'detached' mode for the specified project."
+  echo "1. Exports variables from the '.env' file."
+  echo "2. Generates a 'nginx--<instance_name>.conf' file from a template."
+  echo "3. Executes 'docker-compose down' command based on the specified mode, affecting only the specified project."
+  echo "4. Builds the images for the specified project."
+  echo "5. Lifts the containers in 'detached' mode for the specified project."
   echo
   echo "Parameters:"
   echo "  <instance_name>  The name of the instance to manage. This will be used as the Docker project name."
@@ -60,7 +59,7 @@ if [ -z "$INSTANCE_NAME" ]; then
 fi
 
 # Instance-specific .env file
-ENV_FILE=".env-${INSTANCE_NAME}"
+ENV_FILE=".env"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "Error: The file $ENV_FILE does not exist."
@@ -72,14 +71,11 @@ set -o allexport
 source "$ENV_FILE"
 set +o allexport
 
-# Generate instance-specific docker-compose.yml from the template
-echo "Generating docker-compose-${INSTANCE_NAME}.yml..."
-envsubst < docker-compose-template.yml > docker-compose-${INSTANCE_NAME}.yml
-
 # Generate instance-specific nginx.conf from the template
 echo "Generating nginx-${INSTANCE_NAME}.conf..."
-#envsubst < deployment/nginx/nginx-template.conf > deployment/nginx/nginx-${INSTANCE_NAME}.conf
-envsubst '$ED_NODE_INSTANCE_NAME' < deployment/nginx/nginx-template.conf > deployment/nginx/nginx-${INSTANCE_NAME}.conf
+#envsubst < nginx/nginx-template.conf > nginx/nginx-${INSTANCE_NAME}.conf
+envsubst '$ISSUERSERVICEVC_INSTANCE_NAME' < nginx/nginx-template.conf > nginx/nginx-${INSTANCE_NAME}.conf
+
 
 # Determine which 'down' command to run based on the mode
 case "$MODE" in
@@ -88,11 +84,13 @@ case "$MODE" in
     ;;
   fromzero)
     echo "Executing 'down -v' (fromzero mode)..."
-    docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
+    #docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml down -v
+    docker-compose down -v
     ;;
   removeall)
     echo "Executing 'down -v' (removeall mode)..."
-    docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
+    #docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml down -v
+    docker-compose down -v
     echo "Process completed for instance '$INSTANCE_NAME'!"
     exit 0
     ;;
@@ -106,10 +104,12 @@ esac
 
 # Build services
 echo "Building images..."
-docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml build
+#docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml build
+docker-compose build
 
 # Lift services
 echo "Lifting services..."
-docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml up -d
+#docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml up -d
+docker-compose up -d
 
 echo "Process completed for instance '$INSTANCE_NAME'!"

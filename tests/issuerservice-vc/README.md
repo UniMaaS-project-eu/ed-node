@@ -1,51 +1,66 @@
-# ISSUERSERVICE - Deployment Steps
+# ISSUERSERVICE-VC - Deployment Steps
 
 # 0 - Configuration
 
-Configure `.env` file, define the host, and exposed ports.
+Configure `.env` file, define the host (`BASE_HOST`), exposed port (`NGINX_EXPOSED_PORT`) and instance name (`ISSUERSERVICEVC_INSTANCE_NAME`).
 
 ## 1 - Create Private/Public Key, DID & Vault Config File
 
-To deploy the `issuerservice`, you must first create the private and public keys for the DID document. This folder offers a script (`generateIssuerFiles-KeysDIDVault`) to generate test keys.
+To deploy the `issuerservice-vc`, you must first create the private and public keys for the DID document. This folder offers a script (`generateIssuerFiles-KeysDIDVault`) to generate test keys.
 
 ```sh
 cd tests/issuerservice-vc;
 ./generateIssuerFiles-KeysDIDVault.sh <instanceName> <issuerServiceDIDHost>:<issuerServiceDIDPort>;
-# ex: ./generateIssuerFiles-KeysDIDVault.sh issuerservice localhost:9878;
+# ex: ./generateIssuerFiles-KeysDIDVault.sh issuerservicevc http://localhost:9878;
 ```
 Where:
 
 - <instanceName>: Instance name.
-- <edNodeDIDHost:edNodeDIDPort>: host & port where DID related to the ED-Node can be resolved.
+- <edNodeDIDHost:edNodeDIDPort>: host & port where DID related to the ED-Node can be resolved. (`ISSUERSERVICEVC_HOST`:`ISSUERSERVICEVC_DID_PORT`)
 
 Running the script should create two new folders, `assets` and `vault`, with the following contents:
 
 ```
 assets/
 ├── dids/
-│   ├── issuerservice/
+│   ├── issuerservicevc/
 │   │   └── .well-known/
 │   │       └── did.json
 └── keysPrivPub/
-        └── issuerservice/
-            ├── issuerservice_private.pem
-            └── issuerservice_public.pem
+        └── issuerservicevc/
+            ├── issuerservicevc_private.pem
+            └── issuerservicevc_public.pem
 vault/
-     └── issuerservice/
-        └── vault-issuerservice-config.json
+     └── issuerservicevc/
+        └── vault-issuerservicevc-config.json
 ```
 
 # 2 - Deploy
 
+Deploy with:
+
 ```sh
-cd tests/issuerservice-vc/; 
-docker-compose build; docker-compose up -d
+cd tests/issuerservice-vc/;
+./deploy.sh <instanceName> or ./deploy.sh <instanceName> recreate
+#For instance: ./deploy.sh issuerservicevc
+```
+
+**NOTE:** For simulating `docker-compose down -v` executes:
+```sh
+./deploy.sh <instanceName> removeall
+#For instance: ./deploy.sh issuerservicevc removeall
+```
+
+**NOTE:** For simulating `docker-compose down -v; docker-compose build; docker-compose up -d` executes:
+```sh
+./deploy.sh <instanceName> fromzero
+#For instance: ./deploy.sh issuerservicevc fromzero
 ```
 
 # 3 - LOGS Monitor
 
 ```sh
-sleep 4; docker logs -f issuerservice-vc
+sleep 4; docker logs -f issuerservicevc
 ```
 
 # 4 - Testing
@@ -54,20 +69,20 @@ sleep 4; docker logs -f issuerservice-vc
 ## 4.1 - DID Resolution is working
 
 ```sh
-curl http://localhost:9878/issuerservice/.well-known/did.json
+curl http://localhost:9878/issuerservicevc/.well-known/did.json
 ```
 
-## 4.2 - IssuerService API
+## 4.2 - IssuerService-VC API
 
 ### Check Health
 ```sh
-curl http://localhost:8500/api/v1/health
+curl http://localhost:9878/api/v1/health
 ```
 
 ### Info
 
 ```sh
-curl http://localhost:8500/api/v1/info
+curl http://localhost:9878/api/v1/info
 ```
 
 ### Endpoints
@@ -75,7 +90,7 @@ curl http://localhost:8500/api/v1/info
 Obtain "verifiableCredential.rawVc"
 
 ```sh
-curl -X POST http://localhost:8500/api/v1/sign-credential \
+curl -X POST http://localhost:9878/api/v1/sign-credential \
   -H "Content-Type: application/json" \
   -d '{
   "participantDid": "did:web:localhost%3A9876:connector1",
@@ -95,7 +110,7 @@ curl -X POST http://localhost:8500/api/v1/sign-credential \
       "VerifiableCredential",
       "DataProcessorCredential"
     ],
-    "issuer": "did:web:localhost%3A9878:issuerservice",
+    "issuer": "did:web:localhost%3A9878:issuerservicevc",
     "issuanceDate": "2023-08-18T00:00:00Z",
     "credentialSubject": {
       "id": "did:web:localhost%3A9876:connector1",
@@ -109,7 +124,7 @@ curl -X POST http://localhost:8500/api/v1/sign-credential \
 Obtain full signed Verifiable Credential:
 
 ```sh
-curl -X POST http://localhost:8500/api/v1/issue-credential \
+curl -X POST http://localhost:9878/api/v1/issue-credential \
   -H "Content-Type: application/json" \
   -d '{
   "participantDid": "did:web:localhost%3A9876:connector1",
@@ -130,7 +145,7 @@ curl -X POST http://localhost:8500/api/v1/issue-credential \
       "VerifiableCredential",
       "DataProcessorCredential"
     ],
-    "issuer": "did:web:localhost%3A9878:issuerservice",
+    "issuer": "did:web:localhost%3A9878:issuerservicevc",
     "issuanceDate": "2023-08-18T00:00:00Z",
     "credentialSubject": {
       "id": "did:web:localhost%3A9876:connector1",

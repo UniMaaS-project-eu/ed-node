@@ -7,15 +7,48 @@ set -e
 # Verify that arguments have been provided
 if [ $# -lt 2 ]; then
     echo "Use: $0 <instanceName> <hostDID:portDID> <hostCredServ:portCredServ> <identityHost:identityPort> <dspHost:dspPort>"
-    echo "Ejemplo: $0 connector1 localhost:9876 localhost:7191 localhost:7192 localhost:8192"
+    echo "Example (Proxy): $0 connector1 http://localhost:9876 http://localhost:9876 http://localhost:9876 http://localhost:9876"
+    echo "Example: $0 connector1 http://localhost:9876 http://localhost:7191 http://localhost:7192 http://localhost:8192"
     exit 1
 fi
 
 PARTICIPANT=$1
+
 HOST_PORT=$2
+HOST_PORT_PROTOCOL="http"
+# Verify if HOST_PORT contains "://"
+if [[ "$HOST_PORT" =~ ^https?:// ]]; then
+  # If contains "://"
+  HOST_PORT_PROTOCOL="${HOST_PORT%://*}"
+  HOST_PORT="${HOST_PORT##*://}"
+fi
+
 HOST_PORT_CS=$3
+HOST_PORT_CS_PROTOCOL="http"
+# Verify if HOST_PORT_CS contains "://"
+if [[ "$HOST_PORT_CS" =~ ^https?:// ]]; then
+  # If contains "://"
+  HOST_PORT_CS_PROTOCOL="${HOST_PORT_CS%://*}"
+  HOST_PORT_CS="${HOST_PORT_CS##*://}"
+fi
+
 HOST_PORT_IH=$4
+HOST_PORT_IH_PROTOCOL="http"
+# Verify if HOST_PORT_IH contains "://"
+if [[ "$HOST_PORT_IH" =~ ^https?:// ]]; then
+  # If contains "://"
+  HOST_PORT_IH_PROTOCOL="${HOST_PORT_IH%://*}"
+  HOST_PORT_IH="${HOST_PORT_IH##*://}"
+fi
+
 HOST_PORT_DSP=$5
+HOST_PORT_DSP_PROTOCOL="http"
+# Verify if HOST_PORT_DSP contains "://"
+if [[ "$HOST_PORT_DSP" =~ ^https?:// ]]; then
+  # If contains "://"
+  HOST_PORT_DSP_PROTOCOL="${HOST_PORT_DSP%://*}"
+  HOST_PORT_DSP="${HOST_PORT_DSP##*://}"
+fi
 
 # URL-encode of host:port for DID
 DID_HOST=$(echo "$HOST_PORT" | sed 's/:/%3A/g')
@@ -68,17 +101,17 @@ generate_participant_did() {
         {
             "id": "${DID_ID}#dsp-api",
             "type": "DataspaceConnector",
-            "serviceEndpoint": "http://${HOST_PORT_DSP}/api/dsp"
+            "serviceEndpoint": "${HOST_PORT_DSP_PROTOCOL}://${HOST_PORT_DSP}/api/dsp"
         },
         {
             "id": "${DID_ID}#credential-service",
             "type": "CredentialService",
-            "serviceEndpoint": "http://${HOST_PORT_CS}/api/credentials/v1/participants/$(echo -n "$DID_ID" | base64 -w 0)"
+            "serviceEndpoint": "${HOST_PORT_CS_PROTOCOL}://${HOST_PORT_CS}/api/credentials/v1/participants/$(echo -n "$DID_ID" | base64 -w 0)"
         },
         {
             "id": "${DID_ID}#identity-hub",
             "type": "IdentityHub",
-            "serviceEndpoint": "http://${HOST_PORT_IH}/api/identity"
+            "serviceEndpoint": "${HOST_PORT_IH_PROTOCOL}://${HOST_PORT_IH}/api/identity"
         }
     ],
     "verificationMethod": [
@@ -175,7 +208,7 @@ echo "     └── ${PARTICIPANT}/"
 echo "        └── vault-${PARTICIPANT}-config.json"
 echo ""
 echo "URLs DID-Resolver:"
-echo "  curl http://$HOST_PORT/$PARTICIPANT/.well-known/did.json"
+echo "  curl $HOST_PORT_PROTOCOL://$HOST_PORT/$PARTICIPANT/.well-known/did.json"
 
 echo ""
 echo "docker-compose configuration:"

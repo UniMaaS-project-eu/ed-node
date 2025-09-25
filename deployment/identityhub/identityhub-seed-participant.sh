@@ -5,7 +5,8 @@
 echo "🚀 Starting Identity Seed Participant Script"
 
 # Configuration variables
-PARTICIPANT_ID=${PARTICIPANT_ID}
+PARTICIPANT_ID="${PARTICIPANT_ID}"
+PARTICIPANT_PROTOCOL="${PARTICIPANT_PROTOCOL}"
 PARTICIPANT_HOST="${PARTICIPANT_HOST}"
 PARTICIPANT_CALLBACK_PORT="${PARTICIPANT_CALLBACK_PORT}"
 PARTICIPANT_IH_HOST="${PARTICIPANT_IH_HOST}"
@@ -131,8 +132,8 @@ echo ""
 echo "2️⃣  Creating Participant context..."
 
 participant_service_endpoints=$(jq -n \
-    --arg credentialEndpoint "http://${PARTICIPANT_HOST}:${PARTICIPANT_IH_CREDENTIALS_PORT}/api/credentials/v1/participants/$(echo -n "$PARTICIPANT_ID" | base64 -w 0)" \
-    --arg dspEndpoint "http://${PARTICIPANT_HOST}:${PARTICIPANT_CALLBACK_PORT}/api/dsp" \
+    --arg credentialEndpoint "${PARTICIPANT_PROTOCOL}://${PARTICIPANT_HOST}:${PARTICIPANT_IH_CREDENTIALS_PORT}/api/credentials/v1/participants/$(echo -n "$PARTICIPANT_ID" | base64 -w 0)" \
+    --arg dspEndpoint "${PARTICIPANT_PROTOCOL}://${PARTICIPANT_HOST}:${PARTICIPANT_CALLBACK_PORT}/api/dsp" \
     '[
         {
             "type": "CredentialService",

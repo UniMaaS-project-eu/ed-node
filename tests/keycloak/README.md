@@ -14,7 +14,7 @@ docker-compose build; docker-compose up -d
 # 2 - LOGS Monitor
 
 ```sh
-sleep 4; docker logs -f issuerservice-vc
+sleep 4; docker logs -f issuerservicevc
 ```
 
 # 3 - Create Client Keycloak
@@ -57,7 +57,7 @@ Once this is done we already have Keycloak configured and can obtain token with:
 
 ```sh
 curl -X POST  
-"http://<keycloak-host>:<keycloak-port>/realms/unimaas/protocol/openid-connect/token" \
+"<KeycloakProtocoll>://<KeycloakHost>:<KeycloakPort>/realms/<KeycloakRealm>/protocol/openid-connect/token" \
 -H "Content-Type: application/x-www-form-urlencoded"   \
 -d "grant_type=client_credentials&client_id=<clientID>&client_secret=<clientSecret>"
 ```

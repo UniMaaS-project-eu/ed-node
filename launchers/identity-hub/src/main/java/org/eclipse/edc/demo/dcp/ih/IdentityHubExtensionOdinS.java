@@ -49,23 +49,23 @@ import java.time.ZoneOffset;
 
 import static org.eclipse.edc.spi.constants.CoreConstants.JSON_LD;
 
-@Extension("DCP Demo: Core Extension for IdentityHub with HTTP Credential Issuer and Keycloak Integration")
+@Extension("DCP Demo: Core Extension for IdentityHub with HTTP Credential IssuerService-VC and Keycloak Integration")
 public class IdentityHubExtensionOdinS implements ServiceExtension {
 
-    // Issuer Service Link
-    @Setting(key = "unimaas.issuersigner.protocol", description = "Protocol for the credential issuer service", defaultValue = "http")
+    // IssuerService-VC Link
+    @Setting(key = "unimaas.issuerservicevc.protocol", description = "Protocol for the credential issuerservice-vc", defaultValue = "https")
     private String issuerProtocol;
 
-    @Setting(key = "unimaas.issuersigner.host", description = "Host for the credential issuer service", defaultValue = "localhost")
+    @Setting(key = "unimaas.issuerservicevc.host", description = "Host for the credential issuerservice-vc", defaultValue = "localhost")
     private String issuerHost;
 
-    @Setting(key = "unimaas.issuersigner.port", description = "Port for the credential issuer service", defaultValue = "8500")
+    @Setting(key = "unimaas.issuerservicevc.port", description = "Port for the credential issuerservice-vc", defaultValue = "9090")
     private String issuerPort;
 
-    @Setting(key = "unimaas.issuersigner.path", description = "Path for the credential issuer service", defaultValue = "/api/v1/issue-credential")
+    @Setting(key = "unimaas.issuerservicevc.path", description = "Path for the credential issuerservice-vc", defaultValue = "/api/v1/issue-credential")
     private String issuerPath;
 
-    @Setting(key = "unimaas.issuersigner.did", description = "DID of the issuer service", defaultValue = "did:web:localhost%3A9876")
+    @Setting(key = "unimaas.issuerservicevc.did", description = "DID of the issuerservice-vc", defaultValue = "did:web:localhost%3A9876")
     private String issuerDID;
 
     // Configuration for the participant's DID (who receives the credential)

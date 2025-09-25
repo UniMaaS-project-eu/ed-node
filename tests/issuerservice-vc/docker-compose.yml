@@ -1,15 +1,17 @@
 version: "3.5"
 
 services:
-  edc-did-server:
+  edc-proxy:
     image: nginx:alpine
-    hostname: edc-did-server-issuerservice
-    container_name: edc-did-server-issuerservice
+    hostname: edc-proxy-issuerservicevc
+    container_name: edc-proxy-issuerservicevc
     ports:
-      - "${ISSUERSERVICE_DID_PORT:-9876}:80"
+      - "${NGINX_EXPOSED_PORT:-9876}:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./assets/dids/:/var/www/:ro
+      #- ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx-${ISSUERSERVICEVC_INSTANCE_NAME}.conf:/etc/nginx/nginx.conf:ro
+      #- ./assets/dids/:/var/www/:ro
+      - ./assets/dids/${ISSUERSERVICEVC_INSTANCE_NAME}/:/var/www/${ISSUERSERVICEVC_INSTANCE_NAME}/:ro
     networks:
       - edc-network
     restart: always
@@ -19,22 +21,22 @@ services:
       timeout: 10s
       retries: 3
 
-  issuerservice-vc:
+  issuerservicevc:
     build:
       context: ../../
       dockerfile: tests/issuerservice-vc/Dockerfile
     image: unimaas/issuerservice-vc:1.0
-    hostname: issuerservice-vc
-    container_name: issuerservice-vc
+    hostname: issuerservicevc
+    container_name: issuerservicevc
     restart: always
-    ports:
-      - "${ISSUERSERVICE_PORT}:8080"
+#    ports:
+#      - "${ISSUERSERVICEVC_PORT}:9090" #DEPRECATED (20250923): External access via NGINX redirects
     environment:
-      - ISSUER_DID=did:web:${ISSUERSERVICE_HOST}%3A${ISSUERSERVICE_DID_PORT}:issuerservice
-      - PRIVATE_KEY_PATH=/app/keys/issuer_private.pem
+      - ISSUER_DID=${ISSUER_DID}
+#      - PRIVATE_KEY_PATH=/app/keys/issuer_private.pem
       - EXPIRY_DAYS=${EXPIRY_DAYS}
     volumes:
-      - ./assets/keysPrivPub/issuerservice/issuerservice_private.pem:/app/keys/issuer_private.pem:ro
+      - ./assets/keysPrivPub/${ISSUERSERVICEVC_INSTANCE_NAME}/${ISSUERSERVICEVC_INSTANCE_NAME}_private.pem:/app/keys/issuer_private.pem:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/v1/health"]
       interval: 30s

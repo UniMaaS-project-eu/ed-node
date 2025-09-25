@@ -1,15 +1,17 @@
 version: '3.5'
 
 services:
-  edc-did-server:
+  edc-proxy:
     image: nginx:alpine
-    hostname: edc-did-server-${ED_NODE_INSTANCE_NAME}
-    container_name: edc-did-server-${ED_NODE_INSTANCE_NAME}
+    hostname: edc-proxy-${ED_NODE_INSTANCE_NAME}
+    container_name: edc-proxy-${ED_NODE_INSTANCE_NAME}
     ports:
-      - "${ED_NODE_DID_PORT:-9876}:80"
+      - "${NGINX_EXPOSED_PORT}:80"
     volumes:
-      - ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./deployment/assets/dids/:/var/www/:ro
+      #- ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/nginx-${ED_NODE_INSTANCE_NAME}.conf:/etc/nginx/nginx.conf:ro
+      #- ./deployment/assets/dids/:/var/www/:ro
+      - ./deployment/assets/dids/${ED_NODE_INSTANCE_NAME}/:/var/www/${ED_NODE_INSTANCE_NAME}/:ro
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: always
@@ -101,13 +103,13 @@ services:
     image: unimaas/edc-identityhub:1.0
     hostname: edc-ih-${ED_NODE_INSTANCE_NAME}
     container_name: edc-ih-${ED_NODE_INSTANCE_NAME}
-    ports:
-      - "${IH_API_PORT}:7090"
-      - "${IH_CREDENTIALS_PORT}:7091"
-      - "${IH_IDENTITY_PORT}:7092"
-      - "${IH_DID_PORT}:7093"
-      - "${IH_VERSION_PORT}:7094"
-      - "${IH_STS_PORT}:7095"
+#    ports:
+#      - "${IH_API_PORT}:7090" --> DEPRECATED (20250923): Not exposed port
+#      - "${IH_CREDENTIALS_PORT}:7091" -->  DEPRECATED (20250923): External access via NGINX redirects
+#      - "${IH_IDENTITY_PORT}:7092" --> DEPRECATED (20250923): External access via NGINX redirects
+##      - "${IH_DID_PORT}:7093" --> DEPRECATED (20250923): Not used
+##      - "${IH_VERSION_PORT}:7094" --> DEPRECATED (20250923): Not used
+##      - "${IH_STS_PORT}:7095" --> DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: always
@@ -119,7 +121,7 @@ services:
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault-token:ro
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault-identityhub-token:ro
     environment:
-      - EDC_HOSTNAME=${CONNECTOR_HOST}
+      - EDC_HOSTNAME=${IH_HOST}
       
       # Identity configuration
       - EDC_IAM_ISSUER_ID=${ED_NODE_DID}
@@ -149,16 +151,16 @@ services:
       - EDC_VAULT_CERTIFICATE_RESOLVER_ENABLED=true
       - EDC_VAULT_PRIVATEKEY_RESOLVER_ENABLED=true
 
-      ########################### IssuerService Link ###########################
+      ########################### IssuerService-VC Link ###########################
 
       # Types of credentials that will be automatically obtained at startup
 
-      - UNIMAAS_ISSUERSIGNER_PROTOCOL=${UNIMAAS_ISSUERSIGNER_PROTOCOL}
-      - UNIMAAS_ISSUERSIGNER_HOST=${UNIMAAS_ISSUERSIGNER_HOST}
-      - UNIMAAS_ISSUERSIGNER_PORT=${UNIMAAS_ISSUERSIGNER_PORT}
-      - UNIMAAS_ISSUERSIGNER_PATH=${UNIMAAS_ISSUERSIGNER_PATH}
+      - UNIMAAS_ISSUERSERVICEVC_PROTOCOL=${UNIMAAS_ISSUERSERVICEVC_PROTOCOL}
+      - UNIMAAS_ISSUERSERVICEVC_HOST=${UNIMAAS_ISSUERSERVICEVC_HOST}
+      - UNIMAAS_ISSUERSERVICEVC_PORT=${UNIMAAS_ISSUERSERVICEVC_PORT}
+      - UNIMAAS_ISSUERSERVICEVC_PATH=${UNIMAAS_ISSUERSERVICEVC_PATH}
 
-      - UNIMAAS_ISSUERSIGNER_DID=${UNIMAAS_ISSUERSIGNER_DID}
+      - UNIMAAS_ISSUERSERVICEVC_DID=${UNIMAAS_ISSUERSERVICEVC_DID}
 
       ########################### IDP-AUTH (KEYCLOAK) Link ###########################
 
@@ -204,13 +206,20 @@ services:
       - ./deployment/assets/keysPrivPub/${ED_NODE_INSTANCE_NAME}/${ED_NODE_INSTANCE_NAME}_public.pem:/vault/keys/certificate.pem
     environment:
       - PARTICIPANT_ID=${ED_NODE_DID}
-      - PARTICIPANT_HOST=${CONNECTOR_HOST}
-      - PARTICIPANT_CALLBACK_PORT=${CONNECTOR_CALLBACK_PORT}
-      - PARTICIPANT_IH_HOST=${IH_HOST}
+      - PARTICIPANT_PROTOCOL=${NGINX_PROTOCOL}
+      #- PARTICIPANT_HOST=${CONNECTOR_HOST}  #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_HOST=${BASE_HOST}
+      #- PARTICIPANT_CALLBACK_PORT=${CONNECTOR_CALLBACK_PORT} #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_CALLBACK_PORT=${NGINX_EXPOSED_PORT}
+      #- PARTICIPANT_IH_HOST=${IH_HOST} #DEPRECATED (20250923): Replaced by Identityhub hostname (internal comunications)
+      - PARTICIPANT_IH_HOST=edc-ih-${ED_NODE_INSTANCE_NAME}
       - PARTICIPANT_IH_API_KEY=${IH_API_KEY}
-      - PARTICIPANT_IH_API_PORT=${IH_API_PORT}
-      - PARTICIPANT_IH_CREDENTIALS_PORT=${IH_CREDENTIALS_PORT}
-      - PARTICIPANT_IH_IDENTITY_PORT=${IH_IDENTITY_PORT}
+      #- PARTICIPANT_IH_API_PORT=${IH_API_PORT} #DEPRECATED (20250923): Comunications will use internal port
+      - PARTICIPANT_IH_API_PORT=7090
+      #- PARTICIPANT_IH_CREDENTIALS_PORT=${IH_CREDENTIALS_PORT} #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_IH_CREDENTIALS_PORT=${NGINX_EXPOSED_PORT}
+      #- PARTICIPANT_IH_IDENTITY_PORT=${IH_IDENTITY_PORT} #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_IH_IDENTITY_PORT=7092
 
   connector:
     build:
@@ -219,16 +228,16 @@ services:
     image: unimaas/edc-connector:1.0
     hostname: edc-connector-${ED_NODE_INSTANCE_NAME}
     container_name: edc-connector-${ED_NODE_INSTANCE_NAME}
-    ports:
-      - "${CONNECTOR_API_PORT}:8080"
-      - "${CONNECTOR_API_MANAGEMENT_PORT}:8081"
-      - "${CONNECTOR_CALLBACK_PORT}:8082"
-      - "${CONNECTOR_API_CONTROL_PORT}:8083"
-      - "${CONNECTOR_CATALOG_PORT}:8084"
-      - "${CONNECTOR_VERSION_PORT}:8085"
-      - "${CONNECTOR_PUBLIC_API_PORT}:11001"
-      - "${CONNECTOR_DATAPLANE_PUBLIC_PORT}:9091"
-      - "${CONNECTOR_DATAPLANE_SIGNALING_PORT}:9092"
+#    ports:
+##      - "${CONNECTOR_API_PORT}:8080" --> DEPRECATED (20250923): Not used
+#      - "${CONNECTOR_API_MANAGEMENT_PORT}:8081" --> DEPRECATED (20250923): External access via NGINX redirects
+#      - "${CONNECTOR_CALLBACK_PORT}:8082" --> DEPRECATED (20250923): External access via NGINX redirects
+##      - "${CONNECTOR_API_CONTROL_PORT}:8083" --> DEPRECATED (20250923): Not used
+##      - "${CONNECTOR_CATALOG_PORT}:8084" --> DEPRECATED (20250923): Not used
+##      - "${CONNECTOR_VERSION_PORT}:8085" --> DEPRECATED (20250923): Not used
+#      - "${CONNECTOR_PUBLIC_API_PORT}:11001" --> DEPRECATED (20250923): External access via NGINX redirects
+##      - "${CONNECTOR_DATAPLANE_PUBLIC_PORT}:9091" --> DEPRECATED (20250923): Not used
+##      - "${CONNECTOR_DATAPLANE_SIGNALING_PORT}:9092" --> DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: always
@@ -257,7 +266,8 @@ services:
       - EDC_IH_API_SUPERUSER_KEY=${CONNECTOR_IH_API_KEY}
 
       # DSP
-      - EDC_DSP_CALLBACK_ADDRESS=http://${CONNECTOR_HOST}:${CONNECTOR_CALLBACK_PORT}/api/dsp
+      #- EDC_DSP_CALLBACK_ADDRESS=http://${CONNECTOR_HOST}:${CONNECTOR_CALLBACK_PORT}/api/dsp #DEPRECATED (20250923): External access via NGINX redirects
+      - EDC_DSP_CALLBACK_ADDRESS=${NGINX_PROTOCOL}://${CONNECTOR_HOST}:${NGINX_EXPOSED_PORT}/api/dsp
       #- EDC_WEB_HTTP_PROTOCOL_PORT=${CONNECTOR_CALLBACK_PORT}
       
       # STS - point at IdentityHub
@@ -283,9 +293,10 @@ services:
       - EDC_CONTROLPLANE_VALIDATION_ENDPOINT=http://${ED_NODE_INSTANCE_NAME}:8083/api/control/v3/dataplane/token
       
       # Public transfer endpoint
-      - EDC_TRANSFER_PROXY_ENDPOINT=http://${CONNECTOR_HOST}:${CONNECTOR_PUBLIC_API_PORT}/public
-      - EDC_DATAPLANE_PROXY_PUBLIC_ENDPOINT=http://${CONNECTOR_HOST}:${CONNECTOR_PUBLIC_API_PORT}/public
-      
+      #- EDC_TRANSFER_PROXY_ENDPOINT=http://${CONNECTOR_HOST}:${CONNECTOR_PUBLIC_API_PORT}/api/public
+      #- EDC_DATAPLANE_PROXY_PUBLIC_ENDPOINT=http://${CONNECTOR_HOST}:${CONNECTOR_PUBLIC_API_PORT}/api//public #DEPRECATED (20250923): External access via NGINX redirects
+      - EDC_DATAPLANE_PROXY_PUBLIC_ENDPOINT=http://${ED_NODE_INSTANCE_NAME}:11001/api/public #DEPRECATED (20250923): External access via NGINX redirects
+
       # Dataplane instance ID
       - EDC_DATAPLANE_API_INSTANCE_ID=${ED_NODE_DID}
       
@@ -298,8 +309,8 @@ services:
       - EDC_WEB_REST_CORS_ENABLED=true
       - EDC_MONITOR_LEVEL=DEBUG
 
-      ########################### IssuerService Link ###########################
-      - UNIMAAS_ISSUERSIGNER_DID=${UNIMAAS_ISSUERSIGNER_DID}
+      ########################### IssuerService-VC Link ###########################
+      - UNIMAAS_ISSUERSERVICEVC_DID=${UNIMAAS_ISSUERSERVICEVC_DID}
 
       ########################### Require extra VC for CatalogRequest ###########################
 

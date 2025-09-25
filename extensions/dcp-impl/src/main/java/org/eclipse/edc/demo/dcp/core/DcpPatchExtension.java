@@ -65,8 +65,8 @@ public class DcpPatchExtension implements ServiceExtension {
 
         System.out.println("DEBUG: Initializing DCP Patch Extension with scope extra support");
 
-        var issuerDID = context.getConfig().getString("unimaas.issuersigner.did");
-        System.out.println("DEBUG: unimaas.issuersigner.did: " + issuerDID);
+        var issuerDID = context.getConfig().getString("unimaas.issuerservicevc.did");
+        System.out.println("DEBUG: unimaas.issuerservicevc.did: " + issuerDID);
 
         boolean enableDataProcessorForCatalog = context.getConfig().getBoolean("unimaas.enable.extra.vp.catalogrequest");
         System.out.println("DEBUG: unimaas.enable.extra.vp.catalogrequest: " + enableDataProcessorForCatalog);
@@ -75,7 +75,7 @@ public class DcpPatchExtension implements ServiceExtension {
         var suite = new Jws2020SignatureSuite(typeManager.getMapper(JSON_LD));
         signatureSuiteRegistry.register(VcConstants.JWS_2020_SIGNATURE_SUITE, suite);
 
-        // register dataspace issuer --> connector needs publickey of issuerservice for credential validations.
+        // register dataspace issuerservice-vc --> connector needs publickey of issuerservice for credential validations.
         trustedIssuerRegistry.register(new Issuer(issuerDID, Map.of()), WILDCARD);
 
         // IMPORTANT: Create a DefaultScopeMappingFunction that:

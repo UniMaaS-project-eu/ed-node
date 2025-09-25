@@ -7,12 +7,21 @@ set -e
 # Verify that arguments have been provided
 if [ $# -lt 2 ]; then
     echo "Use: $0 <instanceName> <hostDID:portDID>"
-    echo "Ejemplo: $0 issuerservice localhost:9878"
+    echo "Ejemplo: $0 issuerservicevc http://localhost:9878"
     exit 1
 fi
 
 PARTICIPANT=$1
+
 HOST_PORT=$2
+HOST_PORT_PROTOCOL="http"
+# Verify if HOST_PORT contains "://"
+if [[ "$HOST_PORT" =~ ^https?:// ]]; then
+  # If contains "://"
+  HOST_PORT_PROTOCOL="${HOST_PORT%://*}"
+  HOST_PORT="${HOST_PORT##*://}"
+fi
+
 #HOST_PORT_CS=$3
 #HOST_PORT_IH=$4
 #HOST_PORT_DSP=$5
@@ -204,7 +213,7 @@ echo "     └── ${PARTICIPANT}/"
 echo "        └── vault-${PARTICIPANT}-config.json"
 echo ""
 echo "URLs DID-Resolver:"
-echo "  curl http://$HOST_PORT/$PARTICIPANT/.well-known/did.json"
+echo "  curl $HOST_PORT_PROTOCOL://$HOST_PORT/$PARTICIPANT/.well-known/did.json"
 
 echo ""
 echo "docker-compose configuration:"

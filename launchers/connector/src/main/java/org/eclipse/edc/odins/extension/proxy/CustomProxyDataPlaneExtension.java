@@ -36,7 +36,7 @@ import static org.eclipse.edc.web.spi.configuration.ApiContext.PUBLIC;
  */
 public class CustomProxyDataPlaneExtension implements ServiceExtension {
 
-    private static final int DEFAULT_PUBLIC_PORT = 8185;
+    private static final int DEFAULT_PUBLIC_PORT = 11001;
     private static final String DEFAULT_PUBLIC_PATH = "/api/public";
 
     @Configuration

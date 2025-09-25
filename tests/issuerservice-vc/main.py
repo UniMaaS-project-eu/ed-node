@@ -16,7 +16,7 @@ from cryptography.hazmat.backends import default_backend
 # -----------------------
 # Configuration
 # -----------------------
-ISSUER_DID = os.getenv("ISSUER_DID", "did:web:localhost%3A9876:issuerservice")
+ISSUER_DID = os.getenv("ISSUER_DID", "did:web:localhost%3A9876:issuerservicevc")
 PRIVATE_KEY_PATH = os.getenv("PRIVATE_KEY_PATH", "/app/keys/issuer_private.pem")
 EXPIRY_DAYS = int(os.getenv("EXPIRY_DAYS", "365"))
 
@@ -279,7 +279,7 @@ def health():
     status = "UP" if _initialized else "DOWN"
     return {
         "status": status,
-        "message": "JWT Signer VC Server is running" if _initialized else "Service not properly initialized",
+        "message": "Issuer Service Signer VC Server is running" if _initialized else "Service not properly initialized",
         "issuerDid": ISSUER_DID,
         "timestamp": int(time.time() * 1000),
         "uptimeSeconds": int(time.time() - _start_time)
