@@ -851,13 +851,7 @@
 									]
 								},
 								"method": "POST",
-								"header": [
-									{
-										"key": "X-User-Context",
-										"value": "usuarioprueba",
-										"type": "text"
-									}
-								],
+								"header": [],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n    \"@context\": {\n        \"@vocab\": \"https://w3id.org/edc/v0.0.1/ns/\"\n    },\n    \"@type\": \"CatalogRequest\",\n    \"protocol\": \"dataspace-protocol-http\",\n    \"counterPartyAddress\": \"http://{{conector2IP}}:8292/api/dsp\",\n    \"counterPartyId\": \"did:web:{{conector2IP}}%3A9877:connector2\",\n    \"querySpec\": {\n        \"offset\": 0,\n        \"limit\": 50\n    }\n}",
