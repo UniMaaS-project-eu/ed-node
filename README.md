@@ -1,10 +1,8 @@
 # ED-NODE - ARCHITECTURE
 
+![TrustedDataExchange-ED-Node](./img/TrustedDataExchange-ED-Node.png)
 
-![EclipseDataSpace-Node_v3](./img/EclipseDataSpace-Node_v3.png)
-
-![TrustedDataExchange-Architecture_v3](./img/TrustedDataExchange-Architecture_v3.png)
-
+![TrustedDataExchange-Architecture-flow](./img/TrustedDataExchange-Architecture-flow.png)
 
 
 # ED-NODE - Deployment Steps

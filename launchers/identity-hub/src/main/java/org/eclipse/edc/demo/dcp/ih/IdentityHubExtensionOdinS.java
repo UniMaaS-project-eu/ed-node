@@ -157,6 +157,8 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
                 URLEncoder.encode(oidcClientId, StandardCharsets.UTF_8),
                 URLEncoder.encode(oidcClientSecret, StandardCharsets.UTF_8));
 
+        //monitor.debug("Request payload: " + requestBody);
+
         // Create the HTTP request
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(keycloakTokenEndpoint))
