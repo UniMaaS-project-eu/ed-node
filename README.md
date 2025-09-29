@@ -4,6 +4,7 @@
 
 ![TrustedDataExchange-Architecture-flow](./img/TrustedDataExchange-Architecture-flow.png)
 
+![TrustedDataExchange-Flow](./img/TrustedDataExchange-Flow.png)
 
 # ED-NODE - Deployment Steps
 
