@@ -35,14 +35,14 @@ services:
       - postgres-data-${ED_NODE_INSTANCE_NAME}:/var/lib/postgresql/data
 
       # Scripts (Database+Users+Permisions)
-      #- ./deployment/sql/01-init-edc-basic.sql:/docker-entrypoint-initdb.d/01-init-edc-basic.sql:ro
-      #- ./deployment/sql/02-init-vault-basic.sql:/docker-entrypoint-initdb.d/02-init-vault-basic.sql:ro
-      #- ./deployment/sql/03-init-identityhub-basic.sql:/docker-entrypoint-initdb.d/03-init-identityhub.sql:ro
+      #- ./launchers/postgresql-init/01-init-edc-basic.sql:/docker-entrypoint-initdb.d/01-init-edc-basic.sql:ro
+      #- ./launchers/postgresql-init/02-init-vault-basic.sql:/docker-entrypoint-initdb.d/02-init-vault-basic.sql:ro
+      #- ./launchers/postgresql-init/03-init-identityhub-basic.sql:/docker-entrypoint-initdb.d/03-init-identityhub.sql:ro
 
       # Scripts (Database+Users+Permisions+Tables+Indexes...)
-      - ./deployment/sql/01-init-edc-all.sql:/docker-entrypoint-initdb.d/01-init-edc-all.sql:ro
-      - ./deployment/sql/02-init-vault-all.sql:/docker-entrypoint-initdb.d/02-init-vault-all.sql:ro
-      - ./deployment/sql/03-init-identityhub-all.sql:/docker-entrypoint-initdb.d/03-init-identityhub-all.sql:ro
+      - ./launchers/postgresql-init/01-init-edc-all.sql:/docker-entrypoint-initdb.d/01-init-edc-all.sql:ro
+      - ./launchers/postgresql-init/02-init-vault-all.sql:/docker-entrypoint-initdb.d/02-init-vault-all.sql:ro
+      - ./launchers/postgresql-init/03-init-identityhub-all.sql:/docker-entrypoint-initdb.d/03-init-identityhub-all.sql:ro
 
       #- ./backups-restore:/backups-restore
     environment:
@@ -90,7 +90,7 @@ services:
     entrypoint: sh /vault/vault-init.sh http://edc-vault-${ED_NODE_INSTANCE_NAME}:8200 ${ED_NODE_DID} edc-postgres-${ED_NODE_INSTANCE_NAME}:5432
 
     volumes:
-      - ./deployment/vault/vault-init.sh:/vault/vault-init.sh
+      - ./launchers/vault-init/vault-init.sh:/vault/vault-init.sh
       - ./deployment/assets/keysPrivPub/${ED_NODE_INSTANCE_NAME}/${ED_NODE_INSTANCE_NAME}_private.pem:/vault/keys/private-key.pem
       - ./deployment/assets/keysPrivPub/${ED_NODE_INSTANCE_NAME}/${ED_NODE_INSTANCE_NAME}_public.pem:/vault/keys/certificate.pem
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault

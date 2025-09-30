@@ -7,7 +7,7 @@ RUN apk add --no-cache \
 
 RUN mkdir -p /identityhub
 
-COPY deployment/identityhub/identityhub-seed-participant.sh /identityhub/identityhub-seed.sh
+COPY launchers/identityhub-seed/identityhub-seed-participant.sh /identityhub/identityhub-seed.sh
 
 RUN chmod +x /identityhub/identityhub-seed.sh
 

@@ -55,7 +55,7 @@ RUN apk --no-cache add curl jq
 # Copy the executable JAR from the build stage
 COPY --from=builder /app/launchers/connector/build/libs/connector.jar /app/connector.jar
 
-COPY /deployment/env/connector.env config.properties
+COPY launchers/connector/src/main/resources/configuration/connector.env config.properties
 
 # Copy the deployment directory (needed for example to have the participants list) from the build stage
 #COPY --from=builder /app/deployment ./deployment

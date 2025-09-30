@@ -55,7 +55,7 @@ RUN apk --no-cache add curl jq
 # Copy the executable JAR from the build stage
 COPY --from=builder /app/launchers/identity-hub/build/libs/identity-hub.jar /app/identity-hub.jar
 
-COPY deployment/env/identityhub.env config.properties
+COPY launchers/identity-hub/src/main/resources/configuration/identityhub.env config.properties
 
 COPY deployment ./deployment
 

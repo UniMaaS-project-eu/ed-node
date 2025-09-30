@@ -1,4 +1,4 @@
-# ED-NODE - ARCHITECTURE
+# ED-NODE - ARCHITECTURE & FLOW
 
 ![TrustedDataExchange-ED-Node](./img/TrustedDataExchange-ED-Node.png)
 
