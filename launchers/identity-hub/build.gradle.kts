@@ -22,6 +22,12 @@ dependencies {
     runtimeOnly(project(":extensions:superuser-seed"))
 //    runtimeOnly(project(":extensions:did-example-resolver")) --> REPLACED BY "vault-ini.sh"
 
+    // ############### TrustFramework GAIA-X --> 20250929 ###############
+    //runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-core"))
+    //runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant"))
+    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld"))
+    
+    // -> IdentityHub SPI
     implementation(libs.edc.ih.spi) // needed in the extensions here
     implementation(libs.edc.ih.spi.credentials) // needed in the extensions here
 
@@ -36,13 +42,13 @@ dependencies {
     //}
     runtimeOnly(libs.edc.vault.hashicorp)
     runtimeOnly(libs.edc.bom.identityhub.sql)
-    println("This runtime compiles with a remote STS, Hashicorp Vault and PostgreSQL. You will need properly configured STS, Postgres and HCV instances.")
+    println("This runtime compiles with a remote STS client, Hashicorp Vault and PostgreSQL. You will need properly configured STS, Postgres and HCV instances.")
 
     // API/Presentation: enable /api/credentials/* y /presentations/query
-    runtimeOnly(libs.edc.ih.api.credentials)     // expone /api/credentials/*
+    runtimeOnly(libs.edc.ih.api.credentials)     // exposes /api/credentials/*
     runtimeOnly(libs.edc.ih.api.presentation)    // expone /api/credentials/presentations/*
-    runtimeOnly(libs.edc.ih.api.offerhandler)    // handler para flujo DCP
-    //runtimeOnly(libs.edc.ih.api.watchdog)        // opcional: renovar credenciales
+    runtimeOnly(libs.edc.ih.api.offerhandler)    // exposes for DCP flow
+    //runtimeOnly(libs.edc.ih.api.watchdog)        // optional: credencial renew
 
     //testImplementation(libs.edc.spi.identity.did)
     //testImplementation(libs.edc.lib.crypto)

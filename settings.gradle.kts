@@ -40,3 +40,8 @@ include(":launchers:connector")
 //include(":launchers:runtime-embedded")
 //include(":launchers:catalog-server")
 //include(":launchers:issuerservice")
+
+// TrustFramework GAIA-X --> 20250929
+include(":extensions:common:trust-framework-policies:trust-framework-policies-core")
+include(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant")
+include(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld")

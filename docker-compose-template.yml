@@ -104,12 +104,12 @@ services:
     hostname: edc-ih-${ED_NODE_INSTANCE_NAME}
     container_name: edc-ih-${ED_NODE_INSTANCE_NAME}
 #    ports:
-#      - "${IH_API_PORT}:7090" --> DEPRECATED (20250923): Not exposed port
-#      - "${IH_CREDENTIALS_PORT}:7091" -->  DEPRECATED (20250923): External access via NGINX redirects
-#      - "${IH_IDENTITY_PORT}:7092" --> DEPRECATED (20250923): External access via NGINX redirects
-##      - "${IH_DID_PORT}:7093" --> DEPRECATED (20250923): Not used
-##      - "${IH_VERSION_PORT}:7094" --> DEPRECATED (20250923): Not used
-##      - "${IH_STS_PORT}:7095" --> DEPRECATED (20250923): Not used
+#      - "7090:7090" --> IH_API_PORT WAS DEPRECATED (20250923): Not exposed port
+#      - "7091:7091" --> IH_CREDENTIALS_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+#      - "7092:7092" --> IH_IDENTITY_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+##      - "7093:7093" --> IH_DID_PORT WAS DEPRECATED (20250923): Not used
+##      - "7094:7094" --> IH_VERSION_PORT WAS DEPRECATED (20250923): Not used
+##      - "7095:7095" --> IH_STS_PORT WAS DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: always
@@ -161,6 +161,10 @@ services:
       - UNIMAAS_ISSUERSERVICEVC_PATH=${UNIMAAS_ISSUERSERVICEVC_PATH}
 
       - UNIMAAS_ISSUERSERVICEVC_DID=${UNIMAAS_ISSUERSERVICEVC_DID}
+
+      # TrustFramework GAIA-X --> 20250929
+      - GAIAX_ISSUERSERVICEVC_PORT=${GAIAX_ISSUERSERVICEVC_PORT}
+      - GAIAX_ISSUERSERVICEVC_PATH=${GAIAX_ISSUERSERVICEVC_PATH}
 
       ########################### IDP-AUTH (KEYCLOAK) Link ###########################
 
@@ -229,15 +233,15 @@ services:
     hostname: edc-connector-${ED_NODE_INSTANCE_NAME}
     container_name: edc-connector-${ED_NODE_INSTANCE_NAME}
 #    ports:
-##      - "${CONNECTOR_API_PORT}:8080" --> DEPRECATED (20250923): Not used
-#      - "${CONNECTOR_API_MANAGEMENT_PORT}:8081" --> DEPRECATED (20250923): External access via NGINX redirects
-#      - "${CONNECTOR_CALLBACK_PORT}:8082" --> DEPRECATED (20250923): External access via NGINX redirects
-##      - "${CONNECTOR_API_CONTROL_PORT}:8083" --> DEPRECATED (20250923): Not used
-##      - "${CONNECTOR_CATALOG_PORT}:8084" --> DEPRECATED (20250923): Not used
-##      - "${CONNECTOR_VERSION_PORT}:8085" --> DEPRECATED (20250923): Not used
-#      - "${CONNECTOR_PUBLIC_API_PORT}:11001" --> DEPRECATED (20250923): External access via NGINX redirects
-##      - "${CONNECTOR_DATAPLANE_PUBLIC_PORT}:9091" --> DEPRECATED (20250923): Not used
-##      - "${CONNECTOR_DATAPLANE_SIGNALING_PORT}:9092" --> DEPRECATED (20250923): Not used
+##      - "8080:8080" --> CONNECTOR_API_PORT WAS DEPRECATED (20250923): Not used
+#      - "8081:8081" --> CONNECTOR_API_MANAGEMENT_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+#      - "8082:8082" --> CONNECTOR_CALLBACK_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+##      - "8083:8083" --> CONNECTOR_API_CONTROL_PORT WAS DEPRECATED (20250923): Not used
+##      - "8084:8084" --> CONNECTOR_CATALOG_PORT WAS DEPRECATED (20250923): Not used
+##      - "8085:8085" --> CONNECTOR_VERSION_PORT WAS DEPRECATED (20250923): Not used
+#      - "11001:11001" --> CONNECTOR_PUBLIC_API_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+##      - "9091:9091" --> CONNECTOR_DATAPLANE_PUBLIC_PORT WAS DEPRECATED (20250923): Not used
+##      - "9092:9092" --> CONNECTOR_DATAPLANE_SIGNALING_PORT WAS DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: always

@@ -20,12 +20,23 @@ COPY config ./config
 #COPY extensions ./extensions
 #COPY extensions/catalog-node-resolver/src ./extensions/catalog-node-resolver/src
 #COPY extensions/catalog-node-resolver/build.gradle.kts ./extensions/catalog-node-resolver/build.gradle.kts
+
 COPY extensions/dcp-impl/src ./extensions/dcp-impl/src
 COPY extensions/dcp-impl/build.gradle.kts ./extensions/dcp-impl/build.gradle.kts
+
 #COPY extensions/did-example-resolver/src ./extensions/did-example-resolver/src
 #COPY extensions/did-example-resolver/build.gradle.kts ./extensions/did-example-resolver/build.gradle.kts
 COPY extensions/superuser-seed/src ./extensions/superuser-seed/src
 COPY extensions/superuser-seed/build.gradle.kts ./extensions/superuser-seed/build.gradle.kts
+
+# TrustFramework GAIA-X --> 20250929
+#COPY extensions/common ./extensions/common
+COPY extensions/common/trust-framework-policies/trust-framework-policies-core/src ./extensions/common/trust-framework-policies/trust-framework-policies-core/src
+COPY extensions/common/trust-framework-policies/trust-framework-policies-core/build.gradle.kts ./extensions/common/trust-framework-policies/trust-framework-policies-core/build.gradle.kts
+COPY extensions/common/trust-framework-policies/trust-framework-policies-gaiax-participant/src ./extensions/common/trust-framework-policies/trust-framework-policies-gaiax-participant/src
+COPY extensions/common/trust-framework-policies/trust-framework-policies-gaiax-participant/build.gradle.kts ./extensions/common/trust-framework-policies/trust-framework-policies-gaiax-participant/build.gradle.kts
+COPY extensions/common/trust-framework-policies/trust-framework-policies-jsonld/src ./extensions/common/trust-framework-policies/trust-framework-policies-jsonld/src
+COPY extensions/common/trust-framework-policies/trust-framework-policies-jsonld/build.gradle.kts ./extensions/common/trust-framework-policies/trust-framework-policies-jsonld/build.gradle.kts
 
 #COPY launchers ./launchers
 #COPY launchers/catalog-server/src ./launchers/catalog-server/src

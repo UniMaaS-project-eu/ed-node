@@ -102,7 +102,7 @@ public class DcpPatchExtension implements ServiceExtension {
         policyEngine.registerPostValidator(RequestTransferProcessPolicyContext.class, scopeMappingFunction::apply);
         policyEngine.registerPostValidator(RequestVersionPolicyContext.class, scopeMappingFunction::apply);
 
-        // register scope extractor - this runs BEFORE the PostValidator
+        // register scope extractor
         // DataAccessCredentialScopeExtractor adds policy-based scopes (DataAccess.*)
         System.out.println("DEBUG: Registering DataAccessCredentialScopeExtractor");
         scopeExtractorRegistry.registerScopeExtractor(new DataAccessCredentialScopeExtractor(monitor));

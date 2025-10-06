@@ -24,6 +24,11 @@ dependencies {
     runtimeOnly(project(":extensions:dcp-impl")) // some patches/impls for DCP
 //    runtimeOnly(project(":extensions:catalog-node-resolver")) // to trigger the federated catalog
 
+    // TrustFramework GAIA-X --> 20250929
+    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-core"))
+    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant"))
+    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld"))
+
     // ################### Checkpoint http://localhost:9191/api/check/health ###################
     implementation(libs.edc.api.observability)
 

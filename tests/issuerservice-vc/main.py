@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError
+from typing import List, Optional
 import jwt  # PyJWT
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -66,7 +67,19 @@ class IssueCredentialRequest(BaseModel):
         # Allow additional fields without error
         extra = "ignore"
 
+class IssueGaiaxCredentialRequest(BaseModel):
+    participantDid: str = Field(..., description="DID of the subject/participant")
+    legalName: str = Field(..., description="Legal name of the participant")
+    countryCode: str = Field(..., description="Country code (e.g., ES)")
+    vatNumber: Optional[str] = Field(None, description="VAT registration number")
+    addressCode: Optional[str] = Field(None, description="Address subdivision code")
+    streetAddress: Optional[str] = Field(None, description="Street address")
+    postalCode: Optional[str] = Field(None, description="Postal code")
+    roles: Optional[List[str]] = Field(None, description="List of participant roles (e.g., ['DataProvider', 'DataConsumer'])")
 
+
+    class Config:
+        extra = "ignore"
 # -----------------------
 # App
 # -----------------------
@@ -310,3 +323,231 @@ async def test_endpoint(request: Request):
         "body_preview": body.decode('utf-8')[:200] if body else None
     }
 
+@app.post("/api/v1/issue-gaiax-credential-jwt")
+async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
+    """
+    Issues a GAIA-X 22.06/24.11 compliant credential in JWT format
+    """
+    print(f"[DEBUG] issue_gaiax_credential for: {payload.participantDid}")
+    
+    if not _initialized or _private_key is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    now = datetime.now(tz=timezone.utc)
+    exp = now + timedelta(days=EXPIRY_DAYS)
+    credential_id = f"https://issuer.example.com/credentials/{uuid.uuid4()}"
+
+    # Build credential claims
+    credential_subject = {
+        "id": payload.participantDid,
+        "gx-participant:legalName": payload.legalName,
+        "gx-participant:legalAddress": {
+            "gx-participant:addressCountryCode": payload.countryCode,
+            "gx-participant:addressCode": payload.addressCode or "",
+            "gx-participant:streetAddress": payload.streetAddress or "",
+            "gx-participant:postalCode": payload.postalCode or ""
+        }
+    }
+
+    if payload.vatNumber:
+        credential_subject["gx-participant:registrationNumber"] = {
+            "gx-participant:registrationNumberType": "VAT",
+            "gx-participant:registrationNumberNumber": payload.vatNumber
+        }
+    
+    # Include participant roles if provided
+    if payload.roles:
+        credential_subject["gx:participantRole"] = payload.roles
+
+    # JWT Claims
+    jwt_claims = {
+        "iss": ISSUER_DID,
+        "sub": payload.participantDid,
+        "aud": payload.participantDid,
+        "nbf": int(now.timestamp()),
+        "iat": int(now.timestamp()),
+        "exp": int(exp.timestamp()),
+#        "jti": credential_id,
+        "vc": {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+#                "https://registry.gaia-x.eu/v2206/api/shape"
+                "https://registry.lab.gaia-x.eu/main/context/2411"
+            ],
+            "id": credential_id,
+            "type": ["VerifiableCredential", "LegalPerson"],
+            "credentialSubject": credential_subject,
+            "credentialSchema": [
+                {
+#                    "id": "https://registry.gaia-x.eu/v2206/api/shape",
+                    "id": "https://registry.lab.gaia-x.eu/main/context/2411",
+                    "type": "JsonSchemaValidator2018"
+                }
+            ],
+            "issuer": ISSUER_DID,
+            "issuanceDate": now.isoformat().replace("+00:00", "Z"),
+            "expirationDate": exp.isoformat().replace("+00:00", "Z")
+        }
+    }
+
+    # Sign JWT with EdDSA
+    try:
+        import jwt as pyjwt
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        
+        if not isinstance(_private_key, ed25519.Ed25519PrivateKey):
+            raise ValueError("Private key must be Ed25519")
+        
+        # Convert to PEM for PyJWT
+        from cryptography.hazmat.primitives import serialization
+        private_pem = _private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+        
+        # Sign JWT with EdDSA algorithm
+        jwt_token = pyjwt.encode(
+            jwt_claims,
+            private_pem,
+            algorithm="EdDSA",
+            headers={"kid": f"{ISSUER_DID}#key-1"}
+        )
+        
+        print(f"[DEBUG] GAIA-X JWT credential signed successfully")
+        
+    except Exception as e:
+        print(f"[ERROR] Error signing JWT: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error signing credential: {str(e)}")
+
+    # Return in EDC IdentityHub format
+    response = {
+        "id": str(uuid.uuid4()),
+        "participantContextId": payload.participantDid,
+        "timestamp": int(now.timestamp() * 1000),
+        "issuerId": ISSUER_DID,
+        "holderId": payload.participantDid,
+        "state": 500,
+        "verifiableCredential": {
+            "format": "VC1_0_JWT",
+            "rawVc": jwt_token,  # JWT string
+            "credential": jwt_claims["vc"]  # VC payload for reference
+        }
+    }
+    
+    return response
+
+# -----------------------
+# Endpoint 3: Issue GAIA-X credential (JSON-LD format)
+# -----------------------
+# DEPRETATED IS NOT WORKING/TESTED, WAS REPLACED BY issue-gaiax-credential-jwt
+#@app.post("/api/v1/issue-gaiax-credential-ldproof")
+#async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
+#    """
+#    Issues a GAIA-X 22.06/24.11 compliant credential in JSON-LD format
+#    Compatible with Eclipse EDC TrustFrameworkAdoption
+#    """
+#    print(f"[DEBUG] issue_gaiax_credential for: {payload.participantDid}")
+#    
+#    if not _initialized or _private_key is None:
+#        raise HTTPException(status_code=503, detail="Service not initialized")#
+#
+#    now = datetime.now(tz=timezone.utc)
+#    exp = now + timedelta(days=EXPIRY_DAYS)
+#    credential_id = f"https://issuer.example.com/credentials/{uuid.uuid4()}"
+#
+#    # Build the credential in JSON-LD format (not JWT)
+#    credential = {
+#        "@context": [
+#            "https://www.w3.org/2018/credentials/v1",
+#            "https://registry.gaia-x.eu/v2206/api/shape"
+#        ],
+#        "id": credential_id,
+#        "type": ["VerifiableCredential", "LegalPerson"],
+#        "issuer": {
+#            "id": ISSUER_DID
+#        },
+#        "issuanceDate": now.isoformat(),
+#        "expirationDate": exp.isoformat(),
+#        "credentialSubject": {
+#            "id": payload.participantDid,
+#            "gx-participant:legalName": payload.legalName,
+#            "gx-participant:legalAddress": {
+#                "gx-participant:addressCountryCode": payload.countryCode,
+#                "gx-participant:addressCode": payload.addressCode or "",
+#                "gx-participant:streetAddress": payload.streetAddress or "",
+#                "gx-participant:postalCode": payload.postalCode or ""
+#            }
+#        },
+#        "credentialSchema": [
+#            {
+#                "id": "https://registry.gaia-x.eu/v2206/api/shape",
+#                "type": "JsonSchemaValidator2018"
+#            }
+#        ]
+#    }
+#
+#    # Add optional fields
+#    if payload.vatNumber:
+#        credential["credentialSubject"]["gx-participant:registrationNumber"] = {
+#            "gx-participant:registrationNumberType": "VAT",
+#            "gx-participant:registrationNumberNumber": payload.vatNumber
+#        }
+#    # Include participant roles if provided
+#    if payload.roles:
+#        credential_subject["gx:participantRole"] = payload.roles
+#
+#    # Create proof using LDP (Linked Data Proofs)
+#    # Serialize credential for signing
+#    try:
+#        import hashlib
+#        import base64
+#        
+#        # Canonical JSON for signing
+#        canonical = json.dumps(credential, sort_keys=True, separators=(',', ':'))
+#        message_hash = hashlib.sha256(canonical.encode()).digest()
+#        
+#        # Sign with private key
+#        from cryptography.hazmat.primitives.asymmetric import ed25519
+#        if isinstance(_private_key, ed25519.Ed25519PrivateKey):
+#            signature = _private_key.sign(message_hash)
+#            signature_b64 = base64.b64encode(signature).decode('utf-8')
+#        else:
+#            raise ValueError("Private key must be Ed25519 for GAIA-X credentials")
+#        
+#        # Add proof to credential
+#        credential["proof"] = {
+#            "type": "Ed25519Signature2020",
+#            "created": now.isoformat(),
+#            "proofPurpose": "assertionMethod",
+#            "verificationMethod": f"{ISSUER_DID}#key-1",
+#            "proofValue": signature_b64
+#        }
+#        
+#        print(f"[DEBUG] GAIA-X credential created and signed successfully")
+#        
+#    except Exception as e:
+#        print(f"[ERROR] Error signing GAIA-X credential: {e}")
+#        raise HTTPException(status_code=500, detail=f"Error signing credential: {str(e)}")
+#
+#    # Serialize the complete credential as rawVc
+#    raw_vc = json.dumps(credential, separators=(',', ':'))
+#
+#    # Return in EDC IdentityHub format
+#    response = {
+#        "id": str(uuid.uuid4()),
+#        "participantContextId": payload.participantDid,
+#        "timestamp": int(now.timestamp() * 1000),
+#        "issuerId": ISSUER_DID,
+#        "holderId": payload.participantDid,
+#        "state": 500,
+#        "verifiableCredential": {
+#            "format": "VC1_0_LD",  # CRITICAL: Not JWT format
+#            "rawVc": raw_vc, # JSON (include proof)
+#            "credential": credential  # Direct JSON-LD object
+#        }
+#    }
+#    
+#    return response

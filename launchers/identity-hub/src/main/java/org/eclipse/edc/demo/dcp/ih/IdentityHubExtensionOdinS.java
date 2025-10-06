@@ -68,6 +68,12 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
     @Setting(key = "unimaas.issuerservicevc.did", description = "DID of the issuerservice-vc", defaultValue = "did:web:localhost%3A9876")
     private String issuerDID;
 
+    @Setting(key = "gaiax.issuerservicevc.port", description = "Port for the GAIA-X 22.06/24.11 credential issuerservice-vc", defaultValue = "9090")
+    private String issuerGAIAXPort;
+
+    @Setting(key = "gaiax.issuerservicevc.path", description = "Path for the GAIA-X 22.06/24.11  credential issuerservice-vc", defaultValue = "/api/v1/issue-gaiax-credential-jwt")
+    private String issuerGAIAXPath;
+
     // Configuration for the participant's DID (who receives the credential)
     @Setting(key = "edc.participant.id", description = "DID of the participant", required = true)
     private String participantDid;
@@ -112,6 +118,10 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
 
         monitor.info("Initialized IdentityHub Extension with credential issuer: %s://%s:%s%s"
                 .formatted(issuerProtocol, issuerHost, issuerPort, issuerPath));
+
+        monitor.info("Initialized IdentityHub Extension with GAIA-X credential issuer: %s://%s:%s%s"
+                .formatted(issuerProtocol, issuerHost, issuerGAIAXPort, issuerGAIAXPath));
+
         monitor.info("Keycloak OIDC endpoint: %s://%s:%s%s"
                 .formatted(oidcProtocol, oidcHost, oidcPort, oidcPath));
     }
@@ -122,8 +132,18 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             // First create/store the default scope credential (MembershipCredential) that will always be required (defaultscope, see DcpPatchExtension)
             storeDefaultScopeCredential();
             
+            // Second Obtain JWT of Keycloak.
+            String accessToken = obtainJWTKeyCloak();
+
+            // Decode the JWT and Store credential (DataprocessorCredential)
+            storeExtraScopeCredential(accessToken);
+
             // Second create the Credential for connector (DataprocessorCredential) from JWT of Keycloak.
-            storeKeyCloakCredential();
+            //storeKeyCloakCredential();
+
+            // Third create the GAIA-X 22.06/24.11 Credential.
+            storeGAIAXCredential(accessToken);
+
         } catch (Exception e) {
             monitor.severe("Error in startup process", e);
             throw new RuntimeException("Failed to complete startup process", e);
@@ -132,10 +152,10 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
 
     private void storeDefaultScopeCredential() throws IOException, InterruptedException {
         // Create the default credential request payload
-        ObjectNode credentialRequest = storeMembershipCredential();
+        ObjectNode credentialRequest = createMembershipCredentialPayloadRequest();
 
         // Make the request
-        VerifiableCredentialResource credential = requestCredentialFromIssuer(credentialRequest);
+        VerifiableCredentialResource credential = requestCredentialFromIssuer(credentialRequest, issuerPort, issuerPath);
 
         if (credential != null) {
             store.create(credential);
@@ -143,7 +163,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         }
     }
 
-    private void storeKeyCloakCredential() throws IOException, InterruptedException {
+    private String obtainJWTKeyCloak() throws IOException, InterruptedException {
         monitor.info("Starting Keycloak authentication...");
         
         // Construct Keycloak Token Endpoint URL
@@ -183,7 +203,9 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
                 monitor.info("Successfully authenticated with Keycloak. Token type: %s".formatted(tokenType));
                 
                 // Decode the JWT and display its contents
-                decodeJWTAndStoreVC(accessToken);
+                //storeExtraScopeCredential(accessToken);
+
+                return accessToken;
                 
             } catch (Exception e) {
                 monitor.severe("Error parsing Keycloak token response: %s".formatted(e.getMessage()), e);
@@ -192,9 +214,61 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             monitor.warning("Failed to authenticate with Keycloak. Status: %d, Response: %s"
                     .formatted(response.statusCode(), response.body()));
         }
+        return "";
     }
 
-    private void decodeJWTAndStoreVC(String jwt) {
+//    private void storeKeyCloakCredential() throws IOException, InterruptedException {
+//        monitor.info("Starting Keycloak authentication...");
+//        
+//        // Construct Keycloak Token Endpoint URL
+//        String keycloakTokenEndpoint = "%s://%s:%s%s".formatted(
+//                oidcProtocol, oidcHost, oidcPort, oidcPath);
+//
+//        monitor.debug("Keycloak token endpoint: %s".formatted(keycloakTokenEndpoint));
+//
+//        // Create the request body with the required parameters
+//        String requestBody = String.format("grant_type=client_credentials&client_id=%s&client_secret=%s",
+//                URLEncoder.encode(oidcClientId, StandardCharsets.UTF_8),
+//                URLEncoder.encode(oidcClientSecret, StandardCharsets.UTF_8));
+//
+//        //monitor.debug("Request payload: " + requestBody);
+//
+//        // Create the HTTP request
+//        HttpRequest request = HttpRequest.newBuilder()
+//                .uri(URI.create(keycloakTokenEndpoint))
+//                .header("Content-Type", "application/x-www-form-urlencoded")
+//                .timeout(Duration.ofSeconds(30))
+//                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+//                .build();
+//
+//        // Make the request
+//        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+//
+//        monitor.debug("Keycloak response status: %d".formatted(response.statusCode()));
+//        monitor.debug("Keycloak response body: %s".formatted(response.body()));
+//
+//        if (response.statusCode() == 200) {
+//            try {
+//                // Parse the JSON response
+//                JsonNode responseJson = objectMapper.readTree(response.body());
+//                String accessToken = responseJson.get("access_token").asText();
+//                String tokenType = responseJson.get("token_type").asText();
+//                
+//                monitor.info("Successfully authenticated with Keycloak. Token type: %s".formatted(tokenType));
+//                
+//                // Decode the JWT and display its contents
+//                storeExtraScopeCredential(accessToken);
+//                
+//            } catch (Exception e) {
+//                monitor.severe("Error parsing Keycloak token response: %s".formatted(e.getMessage()), e);
+//            }
+//        } else {
+//            monitor.warning("Failed to authenticate with Keycloak. Status: %d, Response: %s"
+//                    .formatted(response.statusCode(), response.body()));
+//        }
+//    }
+
+    private void storeExtraScopeCredential(String jwt) {
         try {
             monitor.info("Decoding JWT token...");
 
@@ -213,10 +287,10 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             Set<String> roles = extractRolesRecursive(payload);
 
             // Create credential of type DataProcessor
-            ObjectNode dataProcessorRequest = createDataProcessorCredentialRequest(payload, roles);
+            ObjectNode dataProcessorRequest = createDataProcessorCredentialPayloadRequest(payload, roles);
 
             // Request the signed credential from the issuer
-            VerifiableCredentialResource credential = requestCredentialFromIssuer(dataProcessorRequest);
+            VerifiableCredentialResource credential = requestCredentialFromIssuer(dataProcessorRequest, issuerPort, issuerPath);
 
             if (credential != null) {
                 store.create(credential);
@@ -227,6 +301,41 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             monitor.severe("Error decoding JWT: %s".formatted(e.getMessage()), e);
         }
     }
+
+    private void storeGAIAXCredential(String jwt) {
+        try {
+            monitor.info("Decoding JWT token...");
+
+            String[] jwtParts = jwt.split("\\.");
+            if (jwtParts.length != 3) {
+                monitor.warning("Invalid JWT format. Expected 3 parts, got %d".formatted(jwtParts.length));
+                return;
+            }
+
+            String payloadJson = new String(Base64.getUrlDecoder().decode(jwtParts[1]), StandardCharsets.UTF_8);
+            monitor.info("JWT Payload: %s".formatted(payloadJson));
+
+            JsonNode payload = objectMapper.readTree(payloadJson);
+
+            // Extract roles recursively
+            Set<String> roles = extractRolesRecursive(payload);
+
+            // Create credential of type GAIA-X
+            ObjectNode dataGAIAXRequest = createGAIAXCredentialPayloadRequest(payload, roles);
+
+            // Request the signed credential from the issuer
+            VerifiableCredentialResource credential = requestCredentialFromIssuer(dataGAIAXRequest, issuerGAIAXPort, issuerGAIAXPath);
+
+            if (credential != null) {
+                store.create(credential);
+                monitor.info("Successfully stored GAIA-X Credential for participant: %s".formatted(participantDid));
+            }
+
+        } catch (Exception e) {
+            monitor.severe("Error decoding JWT: %s".formatted(e.getMessage()), e);
+        }
+    }
+
 
     /**
      * Recursively traverses the payload looking for "roles" arrays and accumulating unique values.
@@ -252,7 +361,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
     /**
      * Constructs the DataProcessor credential request JSON.
      */
-    private ObjectNode createDataProcessorCredentialRequest(JsonNode jwtPayload, Set<String> roles) {
+    private ObjectNode createDataProcessorCredentialPayloadRequest(JsonNode jwtPayload, Set<String> roles) {
         ObjectNode request = objectMapper.createObjectNode();
 
         // DIDs
@@ -304,7 +413,31 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         return request;
     }
 
-    private ObjectNode storeMembershipCredential() {
+    /**
+     * Constructs the GAIAX credential request JSON.
+     */
+    private ObjectNode createGAIAXCredentialPayloadRequest(JsonNode jwtPayload, Set<String> roles) {
+        ObjectNode request = objectMapper.createObjectNode();
+
+        // DIDs
+        request.put("participantDid", participantDid);
+        request.put("legalName", "Odin Solutions S.L.");
+        request.put("countryCode", "ES");
+        request.put("vatNumber", "ESB73845893");
+        request.put("addressCode", "ES-MU");
+        request.put("streetAddress", "Calle Palma de Mallorca 2");
+        request.put("postalCode", "30009");
+
+        ArrayNode rolesArray = objectMapper.createArrayNode();
+        roles.forEach(rolesArray::add);
+
+        request.set("roles", rolesArray);
+        
+        return request;
+    }
+
+
+    private ObjectNode createMembershipCredentialPayloadRequest() {
         ObjectNode request = objectMapper.createObjectNode();
 
         // Participant and holder DIDs
@@ -352,12 +485,12 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         return request;
     }
 
-    private VerifiableCredentialResource requestCredentialFromIssuer(ObjectNode credentialRequest)
+    private VerifiableCredentialResource requestCredentialFromIssuer(ObjectNode credentialRequest, String portRequest, String pathRequest)
             throws IOException, InterruptedException {
 
         // Build the sending service URL
         String issuerServiceEndpoint = "%s://%s:%s%s".formatted(
-                issuerProtocol, issuerHost, issuerPort, issuerPath);
+                issuerProtocol, issuerHost, portRequest, pathRequest);
 
         monitor.debug("Requesting credential from: %s".formatted(issuerServiceEndpoint));
         monitor.debug("Request payload: %s".formatted(credentialRequest.toString()));

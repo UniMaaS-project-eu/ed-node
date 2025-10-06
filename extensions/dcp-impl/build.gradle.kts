@@ -28,7 +28,6 @@ dependencies {
     // usercontext extension
     implementation(libs.edc.web.spi)
     implementation(libs.edc.ih.spi)
-    //implementation(libs.edc.lib.util)
     implementation(libs.edc.api.management.config)
     implementation(libs.jakarta.rs.api)
     implementation(libs.jakarta.json.api)

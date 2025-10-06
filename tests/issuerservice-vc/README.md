@@ -155,3 +155,47 @@ curl -X POST http://localhost:9878/api/v1/issue-credential \
   }
 }'
 ```
+
+Obtain full signed Verifiable Credential (GAIA-X 22.06/24.11):
+
+```sh
+curl -X POST http://localhost:9090/api/v1/issue-gaiax-credential-jwt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "participantDid": "did:web:localhost%3A7083",
+    "legalName": "Mi Empresa Test SL",
+    "countryCode": "ES",
+    "vatNumber": "ESB12345678",             //OPTIONAL
+    "addressCode": "ES-M",                  //OPTIONAL
+    "streetAddress": "Calle Ejemplo 123",   //OPTIONAL
+    "postalCode": "28001",                   //OPTIONAL
+    "roles": ["partner","secure-administrator"]
+  }'
+```
+
+Expected response:
+
+```json
+{
+  "id": "uuid...",
+  "participantContextId": "did:web:localhost%3A7083",
+  "timestamp": 1736524800000,
+  "issuerId": "did:web:localhost%3A9876:issuerservicevc",
+  "holderId": "did:web:localhost%3A7083",
+  "state": 500,
+  "verifiableCredential": {
+    "format": "VC1_0_JWT",
+    "rawVc": "...",
+    "credential": {
+      "@context": [...],
+      "id": "...",
+      "type": ["VerifiableCredential", "LegalPerson"],
+      "credentialSubject": {...},
+      "credentialSchema": [...],
+      "issuer": "...",
+      "issuanceDate": "...",
+      "expirationDate": "..."
+    }
+  }
+}
+```
