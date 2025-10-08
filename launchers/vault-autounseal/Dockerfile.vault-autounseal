@@ -1,0 +1,14 @@
+FROM hashicorp/vault:1.15
+
+RUN apk add --no-cache \
+    jq \
+    curl \
+    bash \
+    coreutils
+
+WORKDIR /vault
+
+COPY launchers/vault-autounseal/autounseal.sh /usr/local/bin/autounseal.sh
+RUN chmod +x /usr/local/bin/autounseal.sh
+
+CMD ["sh", "/usr/local/bin/autounseal.sh"]

@@ -2,6 +2,25 @@
 
 echo "=== DEBUG: Starting IdentityHub entrypoint ==="
 
+if [ -z "$EDC_VAULT_HASHICORP_URL" ]; then
+    echo "❌ EDC_VAULT_HASHICORP_URL not defined"
+    exit 1
+fi
+
+RESPONSE=$(curl -s $EDC_VAULT_HASHICORP_URL/v1/sys/health)
+echo "$RESPONSE"
+
+# Wait for the Vault API to be available
+echo "Waiting for Vault API to be available..."
+until RESPONSE=$(curl -s $EDC_VAULT_HASHICORP_URL/v1/sys/health) && echo "$RESPONSE" | grep -q '"sealed":false'; do
+    echo "Waiting for Vault at $EDC_VAULT_HASHICORP_URL..."
+    echo "Vault response:"
+    echo "$RESPONSE"
+    sleep 5
+done
+
+echo "✅ Vault API is ready and 'sealed':false."
+
 # Wait for the IdentityHub token to be available
 echo "Waiting for Vault token for IdentityHub..."
 until [ -f /vault-identityhub-token/identityhub-token ]; do

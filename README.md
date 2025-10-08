@@ -32,8 +32,12 @@ Where `<instanceName>` is the Instance Name of the ED-Node (`ED_NODE_INSTANCE_NA
 To deploy the `ed-node`, you must first create the private and public keys for the DID document. This folder offers a script (`generateEDNodeFiles-KeysDIDVault`) to generate test keys.
 
 ```sh
+# Execution with proxy:
+./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <edNodeDIDHost>:<edNodeDIDPort>;
+# ex (proxy): ./generateEDNodeFiles-KeysDIDVault.sh connector1 http://localhost:9876;
+
+# Execution without proxy:
 ./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <edNodeDIDHost>:<edNodeDIDPort> <edNodeCredServHost>:<edNodeCredServPort> <edNodeIdentityHost>:<edNodeIdentityPort> <edNodeDSPHost>:<edNodeDSPPort>;
-# ex (proxy): ./generateEDNodeFiles-KeysDIDVault.sh connector1 http://localhost:9876 http://localhost:9876 http://localhost:9876 http://localhost:9876;
 # ex: ./generateEDNodeFiles-KeysDIDVault.sh connector1 http://localhost:9876 http://localhost:7191 http://localhost:7192 http://localhost:8192;
 ```
 

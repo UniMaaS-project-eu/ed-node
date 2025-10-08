@@ -443,111 +443,112 @@ async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
 # Endpoint 3: Issue GAIA-X credential (JSON-LD format)
 # -----------------------
 # DEPRETATED IS NOT WORKING/TESTED, WAS REPLACED BY issue-gaiax-credential-jwt
-#@app.post("/api/v1/issue-gaiax-credential-ldproof")
-#async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
-#    """
-#    Issues a GAIA-X 22.06/24.11 compliant credential in JSON-LD format
-#    Compatible with Eclipse EDC TrustFrameworkAdoption
-#    """
-#    print(f"[DEBUG] issue_gaiax_credential for: {payload.participantDid}")
-#    
-#    if not _initialized or _private_key is None:
-#        raise HTTPException(status_code=503, detail="Service not initialized")#
-#
-#    now = datetime.now(tz=timezone.utc)
-#    exp = now + timedelta(days=EXPIRY_DAYS)
-#    credential_id = f"https://issuer.example.com/credentials/{uuid.uuid4()}"
-#
-#    # Build the credential in JSON-LD format (not JWT)
-#    credential = {
-#        "@context": [
-#            "https://www.w3.org/2018/credentials/v1",
-#            "https://registry.gaia-x.eu/v2206/api/shape"
-#        ],
-#        "id": credential_id,
-#        "type": ["VerifiableCredential", "LegalPerson"],
-#        "issuer": {
-#            "id": ISSUER_DID
-#        },
-#        "issuanceDate": now.isoformat(),
-#        "expirationDate": exp.isoformat(),
-#        "credentialSubject": {
-#            "id": payload.participantDid,
-#            "gx-participant:legalName": payload.legalName,
-#            "gx-participant:legalAddress": {
-#                "gx-participant:addressCountryCode": payload.countryCode,
-#                "gx-participant:addressCode": payload.addressCode or "",
-#                "gx-participant:streetAddress": payload.streetAddress or "",
-#                "gx-participant:postalCode": payload.postalCode or ""
-#            }
-#        },
-#        "credentialSchema": [
-#            {
-#                "id": "https://registry.gaia-x.eu/v2206/api/shape",
-#                "type": "JsonSchemaValidator2018"
-#            }
-#        ]
-#    }
-#
-#    # Add optional fields
-#    if payload.vatNumber:
-#        credential["credentialSubject"]["gx-participant:registrationNumber"] = {
-#            "gx-participant:registrationNumberType": "VAT",
-#            "gx-participant:registrationNumberNumber": payload.vatNumber
-#        }
-#    # Include participant roles if provided
-#    if payload.roles:
-#        credential_subject["gx:participantRole"] = payload.roles
-#
-#    # Create proof using LDP (Linked Data Proofs)
-#    # Serialize credential for signing
-#    try:
-#        import hashlib
-#        import base64
-#        
-#        # Canonical JSON for signing
-#        canonical = json.dumps(credential, sort_keys=True, separators=(',', ':'))
-#        message_hash = hashlib.sha256(canonical.encode()).digest()
-#        
-#        # Sign with private key
-#        from cryptography.hazmat.primitives.asymmetric import ed25519
-#        if isinstance(_private_key, ed25519.Ed25519PrivateKey):
-#            signature = _private_key.sign(message_hash)
-#            signature_b64 = base64.b64encode(signature).decode('utf-8')
-#        else:
-#            raise ValueError("Private key must be Ed25519 for GAIA-X credentials")
-#        
-#        # Add proof to credential
-#        credential["proof"] = {
-#            "type": "Ed25519Signature2020",
-#            "created": now.isoformat(),
-#            "proofPurpose": "assertionMethod",
-#            "verificationMethod": f"{ISSUER_DID}#key-1",
-#            "proofValue": signature_b64
-#        }
-#        
-#        print(f"[DEBUG] GAIA-X credential created and signed successfully")
-#        
-#    except Exception as e:
-#        print(f"[ERROR] Error signing GAIA-X credential: {e}")
-#        raise HTTPException(status_code=500, detail=f"Error signing credential: {str(e)}")
-#
-#    # Serialize the complete credential as rawVc
-#    raw_vc = json.dumps(credential, separators=(',', ':'))
-#
-#    # Return in EDC IdentityHub format
-#    response = {
-#        "id": str(uuid.uuid4()),
-#        "participantContextId": payload.participantDid,
-#        "timestamp": int(now.timestamp() * 1000),
-#        "issuerId": ISSUER_DID,
-#        "holderId": payload.participantDid,
-#        "state": 500,
-#        "verifiableCredential": {
-#            "format": "VC1_0_LD",  # CRITICAL: Not JWT format
-#            "rawVc": raw_vc, # JSON (include proof)
-#            "credential": credential  # Direct JSON-LD object
-#        }
-#    }
-#    
-#    return response
+@app.post("/api/v1/issue-gaiax-credential-ldproof")
+async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
+    """
+    Issues a GAIA-X 22.06/24.11 compliant credential in JSON-LD format
+    Compatible with Eclipse EDC TrustFrameworkAdoption
+    """
+    print(f"[DEBUG] issue_gaiax_credential for: {payload.participantDid}")
+    
+    if not _initialized or _private_key is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")#
+
+    now = datetime.now(tz=timezone.utc)
+    exp = now + timedelta(days=EXPIRY_DAYS)
+    credential_id = f"https://issuer.example.com/credentials/{uuid.uuid4()}"
+
+    # Build the credential in JSON-LD format (not JWT)
+    credential = {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            #"https://registry.gaia-x.eu/v2206/api/shape"
+            "https://registry.lab.gaia-x.eu/main/context/2411"
+        ],
+        "id": credential_id,
+        "type": ["VerifiableCredential", "LegalPerson"],
+        "issuer": {
+            "id": ISSUER_DID
+        },
+        "issuanceDate": now.isoformat(),
+        "expirationDate": exp.isoformat(),
+        "credentialSubject": {
+            "id": payload.participantDid,
+            "gx-participant:legalName": payload.legalName,
+            "gx-participant:legalAddress": {
+                "gx-participant:addressCountryCode": payload.countryCode,
+                "gx-participant:addressCode": payload.addressCode or "",
+                "gx-participant:streetAddress": payload.streetAddress or "",
+                "gx-participant:postalCode": payload.postalCode or ""
+            }
+        },
+        "credentialSchema": [
+            {
+                "id": "https://registry.gaia-x.eu/v2206/api/shape",
+                "type": "JsonSchemaValidator2018"
+            }
+        ]
+    }
+
+    # Add optional fields
+    if payload.vatNumber:
+        credential["credentialSubject"]["gx-participant:registrationNumber"] = {
+            "gx-participant:registrationNumberType": "VAT",
+            "gx-participant:registrationNumberNumber": payload.vatNumber
+        }
+    # Include participant roles if provided
+    if payload.roles:
+        credential["credentialSubject"]["gx:participantRole"] = payload.roles
+
+    # Create proof using LDP (Linked Data Proofs)
+    # Serialize credential for signing
+    try:
+        import hashlib
+        import base64
+        
+        # Canonical JSON for signing
+        canonical = json.dumps(credential, sort_keys=True, separators=(',', ':'))
+        message_hash = hashlib.sha256(canonical.encode()).digest()
+        
+        # Sign with private key
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        if isinstance(_private_key, ed25519.Ed25519PrivateKey):
+            signature = _private_key.sign(message_hash)
+            signature_b64 = base64.b64encode(signature).decode('utf-8')
+        else:
+            raise ValueError("Private key must be Ed25519 for GAIA-X credentials")
+        
+        # Add proof to credential
+        credential["proof"] = {
+            "type": "Ed25519Signature2020",
+            "created": now.isoformat(),
+            "proofPurpose": "assertionMethod",
+            "verificationMethod": f"{ISSUER_DID}#key-1",
+            "proofValue": signature_b64
+        }
+        
+        print(f"[DEBUG] GAIA-X credential created and signed successfully")
+        
+    except Exception as e:
+        print(f"[ERROR] Error signing GAIA-X credential: {e}")
+        raise HTTPException(status_code=500, detail=f"Error signing credential: {str(e)}")
+
+    # Serialize the complete credential as rawVc
+    raw_vc = json.dumps(credential, separators=(',', ':'))
+
+    # Return in EDC IdentityHub format
+    response = {
+        "id": str(uuid.uuid4()),
+        "participantContextId": payload.participantDid,
+        "timestamp": int(now.timestamp() * 1000),
+        "issuerId": ISSUER_DID,
+        "holderId": payload.participantDid,
+        "state": 500,
+        "verifiableCredential": {
+            "format": "VC1_0_LD",  # CRITICAL: Not JWT format
+            "rawVc": raw_vc, # JSON (include proof)
+            "credential": credential  # Direct JSON-LD object
+        }
+    }
+    
+    return response

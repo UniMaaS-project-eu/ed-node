@@ -1,4 +1,4 @@
-version: '3.5'
+version: '3.9'
 
 services:
   edc-proxy:
@@ -14,12 +14,14 @@ services:
       - ./deployment/assets/dids/${ED_NODE_INSTANCE_NAME}/:/var/www/${ED_NODE_INSTANCE_NAME}/:ro
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
-    restart: always
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # BBDD PostgreSQL
   edc-postgres-connector:
@@ -30,7 +32,7 @@ services:
     #  - "5433:5432"
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
-    restart: always
+    restart: unless-stopped
     volumes:
       - postgres-data-${ED_NODE_INSTANCE_NAME}:/var/lib/postgresql/data
 
@@ -51,9 +53,10 @@ services:
       POSTGRES_PASSWORD: edc_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U edc_user -d edc"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 
   edc-vault-connector:
     image: hashicorp/vault:1.15
@@ -63,17 +66,29 @@ services:
     #  - "6190:8200"
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - edc-postgres-connector
+      edc-postgres-connector:
+        condition: service_healthy
     environment:
       VAULT_SKIP_VERIFY: "true"  # to avoid SSL conflicts
     volumes:
       - ./deployment/vault/${ED_NODE_INSTANCE_NAME}/vault-${ED_NODE_INSTANCE_NAME}-config.json:/vault/custom/local.json
+      - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault
     cap_add:
       - IPC_LOCK
     #command: "server -config=/vault/config/local.json"
     command: "server -config=/vault/custom/local.json"
+    healthcheck:
+      ##test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      #test: ["CMD-SHELL", "vault status -address=http://127.0.0.1:8200 || echo 'Vault not ready yet'"]
+      ##test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8200/v1/sys/health || exit 1"]
+      ##test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8200/v1/sys/health || echo 'Vault starting...'"]
+      test: ["CMD-SHELL", "vault status -address=http://127.0.0.1:8200 2>&1 | grep -E '(Sealed.*false|Initialized.*true)' || echo 'Vault not ready'"]
+      interval: 10s
+      timeout: 35s
+      retries: 30
+      start_period: 20s
 
   # Initialize/Unseal and save the unseal keys and root token for the Connector
   edc-vault-init-connector:
@@ -84,9 +99,13 @@ services:
     hostname: edc-vault-init-${ED_NODE_INSTANCE_NAME}
     container_name: edc-vault-init-${ED_NODE_INSTANCE_NAME}
     depends_on:
-      - edc-vault-connector
+      edc-vault-connector:
+        condition: service_healthy
+      edc-postgres-connector:
+        condition: service_healthy
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
+    restart: "no"
     entrypoint: sh /vault/vault-init.sh http://edc-vault-${ED_NODE_INSTANCE_NAME}:8200 ${ED_NODE_DID} edc-postgres-${ED_NODE_INSTANCE_NAME}:5432
 
     volumes:
@@ -94,6 +113,33 @@ services:
       - ./deployment/assets/keysPrivPub/${ED_NODE_INSTANCE_NAME}/${ED_NODE_INSTANCE_NAME}_private.pem:/vault/keys/private-key.pem
       - ./deployment/assets/keysPrivPub/${ED_NODE_INSTANCE_NAME}/${ED_NODE_INSTANCE_NAME}_public.pem:/vault/keys/certificate.pem
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault
+
+# Vault Auto-Unseal Monitor
+  edc-vault-autounseal:
+    build:
+      context: .
+      dockerfile: launchers/vault-autounseal/Dockerfile.vault-autounseal
+    image: unimaas/vault-autounseal:1.0
+    hostname: edc-vault-autounseal-${ED_NODE_INSTANCE_NAME}
+    container_name: edc-vault-autounseal-${ED_NODE_INSTANCE_NAME}
+    depends_on:
+      edc-vault-connector:
+        condition: service_started
+      edc-vault-init-connector:
+        condition: service_completed_successfully
+    networks:
+      - edc-network-${ED_NODE_INSTANCE_NAME}
+    restart: unless-stopped
+    environment:
+      - VAULT_ADDR=http://edc-vault-${ED_NODE_INSTANCE_NAME}:8200
+      - CHECK_INTERVAL=10
+    volumes:
+      - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault:ro
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q autounseal.sh || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   # IdentityHub Connector
   ih-connector:
@@ -112,11 +158,16 @@ services:
 ##      - "7095:7095" --> IH_STS_PORT WAS DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - edc-postgres-connector
-      - edc-vault-connector
-      - edc-vault-init-connector
+      edc-postgres-connector:
+        condition: service_healthy
+      edc-vault-connector:
+        condition: service_healthy
+#      edc-vault-init-connector:
+#        condition: service_completed_successfully
+#      edc-vault-autounseal:
+#        condition: service_healthy
     volumes:
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault-token:ro
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault-identityhub-token:ro
@@ -174,6 +225,10 @@ services:
       - UNIMAAS_OIDC_IDP_PATH=${UNIMAAS_OIDC_IDP_PATH}
       - UNIMAAS_OIDC_IDP_CLIENT_ID=${UNIMAAS_OIDC_IDP_CLIENT_ID}
       - UNIMAAS_OIDC_IDP_CLIENT_SECRET=${UNIMAAS_OIDC_IDP_CLIENT_SECRET}
+
+      #PDTE_JUAN: 20250921
+      ########################### VP Context Manager Configuration ###########################
+      #- EDC_CONNECTOR_INTERNAL_URL=http://edc-connector-${ED_NODE_INSTANCE_NAME}:8081  
       
       ########################### PostgreSQL persistence ###########################
       ###### Connection data is included in Vault via the "vault-init.sh" script. ######
@@ -186,12 +241,12 @@ services:
       # Connections Pool
       - EDC_SQL_POOL_CONNECTIONS_MAX=10
       - EDC_SQL_POOL_CONNECTIONS_MIN=3
-    #healthcheck:
-    #  test: ["CMD-SHELL", "curl -f http://localhost:7093/health || exit 1"]
-    #  interval: 30s
-    #  timeout: 10s
-    #  retries: 3
-    #  start_period: 40s
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:7090/api/check/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   # Auxiliary service for registering identity contexts and storing secrets (Connector)
   edc-ih-seed-connector:
@@ -205,7 +260,10 @@ services:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: "no"
     depends_on:
-      - ih-connector
+      ih-connector:
+        condition: service_healthy
+#      edc-vault-init-connector:
+#        condition: service_completed_successfully
     volumes:
       - ./deployment/assets/keysPrivPub/${ED_NODE_INSTANCE_NAME}/${ED_NODE_INSTANCE_NAME}_public.pem:/vault/keys/certificate.pem
     environment:
@@ -244,13 +302,18 @@ services:
 ##      - "9092:9092" --> CONNECTOR_DATAPLANE_SIGNALING_PORT WAS DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - edc-postgres-connector
-      - edc-vault-connector
-      - edc-vault-init-connector
-      - ih-connector
-      - edc-ih-seed-connector
+      edc-postgres-connector:
+        condition: service_healthy
+      edc-vault-connector:
+        condition: service_healthy
+#      edc-vault-init-connector:
+#        condition: service_completed_successfully
+      ih-connector:
+        condition: service_healthy
+#      edc-ih-seed-connector:
+#        condition: service_completed_successfully
     volumes:
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault-token:ro
     environment:
@@ -353,6 +416,12 @@ services:
       # Connections Pool
       - EDC_SQL_POOL_CONNECTIONS_MAX=10
       - EDC_SQL_POOL_CONNECTIONS_MIN=3
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8080/api/check/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
 volumes:
   postgres-data-${ED_NODE_INSTANCE_NAME}:

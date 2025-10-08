@@ -89,7 +89,7 @@
 
 # GAIA-X API (obtain context, shapes...)
 
-https://gitlab.com/gaia-x/lab/credentials-events-service 
+https://gitlab.com/gaia-x/lab/credentials-events-service
 
 https://registry.lab.gaia-x.eu/main/docs
 

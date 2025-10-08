@@ -88,11 +88,13 @@ case "$MODE" in
     ;;
   fromzero)
     echo "Executing 'down -v' (fromzero mode)..."
-    docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
+    #docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
+    docker compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
     ;;
   removeall)
     echo "Executing 'down -v' (removeall mode)..."
-    docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
+    #docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
+    docker compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml down -v
     echo "Process completed for instance '$INSTANCE_NAME'!"
     exit 0
     ;;
@@ -106,10 +108,12 @@ esac
 
 # Build services
 echo "Building images..."
-docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml build
+#docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml build
+docker compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml build
 
 # Lift services
 echo "Lifting services..."
-docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml up -d
+#docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml up -d
+docker compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose-${INSTANCE_NAME}.yml up -d
 
 echo "Process completed for instance '$INSTANCE_NAME'!"

@@ -6,15 +6,35 @@ set -e
 
 # Verify that arguments have been provided
 if [ $# -lt 2 ]; then
+    echo "Use (Proxy): $0 <instanceName> <hostDID:portDID>"
+    echo "Example (Proxy): $0 connector1 http://localhost:9876"
     echo "Use: $0 <instanceName> <hostDID:portDID> <hostCredServ:portCredServ> <identityHost:identityPort> <dspHost:dspPort>"
-    echo "Example (Proxy): $0 connector1 http://localhost:9876 http://localhost:9876 http://localhost:9876 http://localhost:9876"
     echo "Example: $0 connector1 http://localhost:9876 http://localhost:7191 http://localhost:7192 http://localhost:8192"
     exit 1
 fi
 
-PARTICIPANT=$1
+# Verify that at least 2 arguments have been provided
+if [ $# -lt 2 ]; then
+    echo "Use: $0 <instanceName> <hostDID:portDID> [<hostCredServ:portCredServ> <identityHost:identityPort> <dspHost:dspPort>]"
+    exit 1
+fi
 
+PARTICIPANT=$1
 HOST_PORT=$2
+
+if [ $# -eq 2 ]; then
+    HOST_PORT_CS=$2
+    HOST_PORT_IH=$2
+    HOST_PORT_DSP=$2
+elif [ $# -eq 5 ]; then
+    HOST_PORT_CS=$3
+    HOST_PORT_IH=$4
+    HOST_PORT_DSP=$5
+else
+    echo "Error: Provide either 2 or 5 parameters."
+    exit 1
+fi
+
 HOST_PORT_PROTOCOL="http"
 # Verify if HOST_PORT contains "://"
 if [[ "$HOST_PORT" =~ ^https?:// ]]; then
@@ -23,7 +43,6 @@ if [[ "$HOST_PORT" =~ ^https?:// ]]; then
   HOST_PORT="${HOST_PORT##*://}"
 fi
 
-HOST_PORT_CS=$3
 HOST_PORT_CS_PROTOCOL="http"
 # Verify if HOST_PORT_CS contains "://"
 if [[ "$HOST_PORT_CS" =~ ^https?:// ]]; then
@@ -32,7 +51,6 @@ if [[ "$HOST_PORT_CS" =~ ^https?:// ]]; then
   HOST_PORT_CS="${HOST_PORT_CS##*://}"
 fi
 
-HOST_PORT_IH=$4
 HOST_PORT_IH_PROTOCOL="http"
 # Verify if HOST_PORT_IH contains "://"
 if [[ "$HOST_PORT_IH" =~ ^https?:// ]]; then
@@ -41,7 +59,6 @@ if [[ "$HOST_PORT_IH" =~ ^https?:// ]]; then
   HOST_PORT_IH="${HOST_PORT_IH##*://}"
 fi
 
-HOST_PORT_DSP=$5
 HOST_PORT_DSP_PROTOCOL="http"
 # Verify if HOST_PORT_DSP contains "://"
 if [[ "$HOST_PORT_DSP" =~ ^https?:// ]]; then

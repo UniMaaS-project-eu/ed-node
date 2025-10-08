@@ -70,6 +70,8 @@ COPY launchers/identity-hub/src/main/resources/configuration/identityhub.env con
 
 COPY deployment ./deployment
 
+COPY extensions/common/trust-framework-policies/trust-framework-policies-jsonld/src/main/resources/context ./resources/context
+
 # Copy and prepare the dynamic startup script
 COPY launchers/identity-hub/src/main/docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
