@@ -10,7 +10,7 @@
 
 ## PREREQUISITES
 
-1. A `Keycloak` instance must be running with a client assigned to the ED-NODE. See the `README.md` file in the `./test/keycloak` folder. This folder provides a deployment of a Keyrock instance (based on Docker Compose) for testing and a guide for creating a Keycloak Client. 
+1. A `Keycloak` instance must be running with a client assigned to the ED-NODE. See the `README.md` file in the `./test/keycloak` folder. This folder provides a deployment of a Keyrock instance (based on Docker-Compose) for testing and a guide for creating a Keycloak Client. 
 
 2. A `Issuer Service for Verifiable Credentials` (VCs) acquisition must be running. See the `README.md` file in the `./test/issuerservice-vc` folder. This folder provides of a development of an `issuerservice-vc` instance for testing.
 
@@ -25,6 +25,23 @@ cp .env-template .env-<instanceName>
 
 Where `<instanceName>` is the Instance Name of the ED-Node (`ED_NODE_INSTANCE_NAME` parameter of `.env-<instanceName>` file)
 
+Define parameters of `.env-<instanceName>` file:
+
+- `BASE_HOST`: Host
+- `NGINX_PROTOCOL`: Protocol (http or https)
+- `NGINX_EXPOSED_PORT`: Port (exposed port for NGINX - ED-Node gateway)
+- `ED_NODE_INSTANCE_NAME`: ED-Node Identifier (contained by ED-Node DID)
+- `UNIMAAS_ISSUERSERVICEVC_PROTOCOL`: IssuerService Protocol (http or https) (obtaining VCs)
+- `UNIMAAS_ISSUERSERVICEVC_HOST`: IssuerService Host (obtaining VCs)
+- `UNIMAAS_ISSUERSERVICEVC_DID_PORT`: IssuerService Port (obtaining VCs)
+- `UNIMAAS_ISSUERSERVICEVC_NAME`: IssuerService Identifier (contained by IssuerService DID)
+- `UNIMAAS_OIDC_IDP_PROTOCOL`: Keycloak Protocol (http or https) (obtaining JWT authenticantion)
+- `UNIMAAS_OIDC_IDP_HOST`: Keycloak Host (obtaining JWT authenticantion)
+- `UNIMAAS_OIDC_IDP_PORT`: Keycloak Port (obtaining JWT authenticantion)
+- `UNIMAAS_OIDC_IDP_REALM`: Keycloak Realm (obtaining JWT authenticantion)
+- `UNIMAAS_OIDC_IDP_CLIENT_ID`: Keycloak ClientID asigned to ED-Node (obtaining JWT authenticantion)
+- `UNIMAAS_OIDC_IDP_CLIENT_SECRET`: Keycloak Client Secret  asigned to ED-Node (obtaining JWT authenticantion)
+- `MOCKREGISTRY_CONTEXT_URL`: (OPTIONAL) Context server resolver for @context contained by VCs (if official online pages can't be accessed negotation steps does't work)
 
 ## 1 - Create Private/Public Key, DID & Vault Config File
 
@@ -33,18 +50,18 @@ To deploy the `ed-node`, you must first create the private and public keys for t
 
 ```sh
 # Execution with proxy:
-./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <edNodeDIDHost>:<edNodeDIDPort>;
+./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <Host>:<NginxExposedPort>;
 # ex (proxy): ./generateEDNodeFiles-KeysDIDVault.sh connector1 http://localhost:9876;
 
 # Execution without proxy:
-./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <edNodeDIDHost>:<edNodeDIDPort> <edNodeCredServHost>:<edNodeCredServPort> <edNodeIdentityHost>:<edNodeIdentityPort> <edNodeDSPHost>:<edNodeDSPPort>;
+./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <Host>:<NginxExposedPort> <edNodeCredServHost>:<edNodeCredServPort> <edNodeIdentityHost>:<edNodeIdentityPort> <edNodeDSPHost>:<edNodeDSPPort>;
 # ex: ./generateEDNodeFiles-KeysDIDVault.sh connector1 http://localhost:9876 http://localhost:7191 http://localhost:7192 http://localhost:8192;
 ```
 
 Where:
 
 - <instanceName>: Instance name (see `ED_NODE_INSTANCE_NAME` parameter of `.env` file).
-- <edNodeDIDHost:edNodeDIDPort>: host & port where DID related to the ED-Node can be resolved (`ED_NODE_DID_HOST`:`ED_NODE_DID_PORT`).
+- <Host:NginxExposedPort>: host & port where DID related to the ED-Node can be resolved (`ED_NODE_DID_HOST`:`ED_NODE_DID_PORT`).
 - <edNodeCredServHost:edNodeCredServPort>: host & port exposed by ED-Node to where `/api/credentials/` endpoints are accessible (see `IH_HOST` and `IH_CREDENTIALS_PORT` parameters of `.env` file). If you use NGINX redirects, you can specify the IP and port exposed by this component (`BASE_HOST`:`NGINX_EXPOSED_PORT`).
 - <edNodeIdentityHost:edNodeIdentityPort>: host & port exposed by ED-Node to where `/api/identity` endpoints are accessible (see `IH_HOST` and `IH_IDENTITY_PORT` parameters of `.env` file).If you use NGINX redirects, you can specify the IP and port exposed by this component (`BASE_HOST`:`NGINX_EXPOSED_PORT`).
 - <edNodeDSPHost:edNodeDSPPort>: host & port exposed by ED-Node to where `/api/dsp` endpoints are accessible (see `CONNECTOR_HOST` and `CONNECTOR_CALLBACK_PORT` parameters of `.env` file).If you use NGINX redirects, you can specify the IP and port exposed by this component (`BASE_HOST`:`NGINX_EXPOSED_PORT`).
@@ -72,20 +89,31 @@ deployment/vault/
 Deploy ED-Node with:
 
 ```sh
-./deploy.sh <instanceName> or ./deploy.sh <instanceName> recreate
+./deploy.sh <instanceName> or ./deploy.sh <instanceName> build_up
 #For instance: ./deploy.sh connector1
 ```
 
-**NOTE:** For simulating `docker-compose down -v` executes:
+**NOTE:** For simulating `docker compose down -v` executes:
 ```sh
-./deploy.sh <instanceName> removeall
-#For instance: ./deploy.sh connector1 removeall
+./deploy.sh <instanceName> down-v
+#For instance: ./deploy.sh connector1 down-v
 ```
 
-**NOTE:** For simulating `docker-compose down -v; docker-compose build; docker-compose up -d` executes:
+**NOTE:** For simulating `docker compose down -v; docker compose build; docker compose up -d` executes:
 ```sh
 ./deploy.sh <instanceName> fromzero
 #For instance: ./deploy.sh connector1 fromzero
+```
+**NOTE:** For simulating `docker compose restart` executes:
+```sh
+./deploy.sh <instanceName> restart
+#For instance: ./deploy.sh connector1 restart
+```
+
+**NOTE:** For simulating `docker compose stop` executes:
+```sh
+./deploy.sh <instanceName> stop
+#For instance: ./deploy.sh connector1 stop
 ```
 
 ## 3 - Validation ED-NODE
@@ -96,14 +124,15 @@ Deployed container:
 - edc-postgres-<instanceName> --> RUNNING
 - edc-vault-<instanceName> --> RUNNING
 - edc-vault-init-<instanceName> --> Exited (0)
+- edc-vault-autounseal-<instanceName> --> RUNNING
 - edc-ih-<instanceName> --> RUNNING
 - edc-ih-seed-<instanceName> --> Exited (0)
 - edc-connector-<instanceName> --> RUNNING
 
 Accessing to the IdentityHub LOGS:
 ```sh
-docker-compose --env-file .env-<instanceName> -f docker-compose-<instanceName>.yml logs -f ih-connector
-#docker-compose --env-file .env-connector1 -f docker-compose-connector1.yml logs -f ih-connector
+docker compose --env-file .env-<instanceName> -f docker-compose-<instanceName>.yml logs -f ih-connector
+#docker compose --env-file .env-connector1 -f docker-compose-connector1.yml logs -f ih-connector
 ```
 
 Next information must be obtained (no errors and 2 credentials stored):
@@ -117,8 +146,8 @@ ih-connector1               | DEBUG 2025-09-19T12:58:06.706610404 [CredentialWat
 
 Accessing to the Conector LOGS:
 ```sh
-docker-compose --env-file .env-<instanceName> -f docker-compose-<instanceName>.yml logs -f connector
-#docker-compose --env-file .env-connector1 -f docker-compose-connector1.yml logs -f connector
+docker compose --env-file .env-<instanceName> -f docker-compose-<instanceName>.yml logs -f connector
+#docker compose --env-file .env-connector1 -f docker-compose-connector1.yml logs -f connector
 ```
 Next information must be obtained:
 ```
@@ -128,15 +157,15 @@ edc-connector-connector1    | INFO 2025-09-19T12:58:03.658233354 Runtime 8ffbda8
 edc-connector-connector1    | DEBUG 2025-09-19T12:58:04.646835642 [DataPlaneSelectorManagerImpl] DataPlaneInstance 8ffbda8f-ef59-49be-9438-6710f86bca75 is now in state AVAILABLE
 ```
 
-## 4 - Testing with other ED-Nodes
-
-## 4.1 - DID Resolution is working
+DID Resolution is working:
 
 ```sh
 curl http://localhost:9876/connector1/.well-known/did.json
 ```
 
-## 4.2 - Deploying a new ED-NODE (same machine)
+## 4 - Testing with other ED-Nodes
+
+To demonstrate the data transfer flow between ED-Nodes, this section details how to deploy a new ED-Node (on the same machine). The procedure is the same as for the initial ED-Node:
 
 - Create the new Keycloak client asigned to the new ED-Node.
 
@@ -156,9 +185,9 @@ cp .env-template .env-<instanceName>
     - `ED_NODE_INSTANCE_NAME:connector2` (new Instance Name).    
     ```
 
-    - `Identity Provider (VCs): ISSUERSERVICE-VC` and `Identity Provider (Autentication): KeyCloack` must be the same as configured for the first ED-Node instance (connector1), **with the exception of**: `UNIMAAS_OIDC_IDP_CLIENT_ID` and `UNIMAAS_OIDC_IDP_CLIENT_SECRET` parameters that must include the information from the last Keycloak Client created.
+    - `Identity Provider (VCs): ISSUERSERVICE-VC`, `Identity Provider (Autentication): KeyCloack` and `Mock Registry` must be the same as configured for the first ED-Node instance (connector1), **with the exception of**: `UNIMAAS_OIDC_IDP_CLIENT_ID` and `UNIMAAS_OIDC_IDP_CLIENT_SECRET` parameters that must include the information from the last Keycloak Client created.
 
-    - DEPRECATED (20250923): To avoid used ports change the exposed port of `IdentityHub` and `Connector`:
+    - DEPRECATED REPLACED BY PROXY (20250923): To avoid used ports change the exposed port of `IdentityHub` and `Connector`:
         ```sh
         #- `IH_API_PORT=7290`
         #- `IH_CREDENTIALS_PORT=7291`
@@ -177,14 +206,17 @@ cp .env-template .env-<instanceName>
         #- `CONNECTOR_DATAPLANE_SIGNALING_PORT=9292`
         ```
 
-
 - Create Private/Public Key, DID & Vault Config File.
 
 For instance:
 ```sh
-./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <edNodeDIDHost>:<edNodeDIDPort> <edNodeCredServHost>:<edNodeCredServPort> <edNodeIdentityHost>:<edNodeIdentityPort> <edNodeDSPHost>:<edNodeDSPPort>;
-# ex (proxy): ./generateEDNodeFiles-KeysDIDVault.sh connector1 http://localhost:9877 http://localhost:9877 http://localhost:9877 http://localhost:9877;
-# ex: ./generateEDNodeFiles-KeysDIDVault.sh connector2 http://localhost:9877 http://localhost:7291 http://localhost:7292 http://localhost:8292;
+# Execution with proxy:
+./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <Host>:<NginxExposedPort>;
+# ex (proxy): ./generateEDNodeFiles-KeysDIDVault.sh connector2 http://localhost:9877;
+
+# Execution without proxy:
+./generateEDNodeFiles-KeysDIDVault.sh <instanceName> <Host>:<NginxExposedPort> <edNodeCredServHost>:<edNodeCredServPort> <edNodeIdentityHost>:<edNodeIdentityPort> <edNodeDSPHost>:<edNodeDSPPort>;
+# ex: ./generateEDNodeFiles-KeysDIDVault.sh connector2 http://localhost:9877 http://localhost:7291 http://localhost:72192 http://localhost:8292;
 ```
 
 **NOTE:** Considering both ED-Nodes will be in same machine you will have to change exposed ports and asing a new `InstanceName` (`connector2`), else you need to change the host too.

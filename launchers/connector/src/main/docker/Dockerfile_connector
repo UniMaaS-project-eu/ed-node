@@ -4,6 +4,8 @@ FROM openjdk:17-jdk-slim AS builder
 # Set the working directory inside the container
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y ca-certificates curl unzip && rm -rf /var/lib/apt/lists/*
+
 # Copy Gradle Wrapper files and build configuration files
 COPY gradle.properties .
 COPY gradlew .

@@ -14,9 +14,7 @@
 
 package org.eclipse.edc.trustframework.policy.gaiax.participant.v2206v2411.function;
 
-import com.apicatalog.vc.Credential;
 import com.fasterxml.jackson.databind.ObjectMapper;
-//import org.eclipse.edc.identityhub.spi.credentials.model.Credential;
 import org.eclipse.edc.iam.verifiablecredentials.spi.model.VerifiableCredential;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.trustframework.policy.core.CredentialClaimsEvaluationFunction;
@@ -28,25 +26,31 @@ import java.util.function.Predicate;
 
 public class GaiaxParticipantClaimsEvaluationFunction extends CredentialClaimsEvaluationFunction<GaiaxParticipantClaims> {
 
-    //private static final String GAIAX_2206_CREDENTIAL_CLAIMS_SHAPE_CONTEXT = "https://registry.gaia-x.eu/v2206/api/shape";
-    //private static final String GAIAX_2411_CREDENTIAL_CLAIMS_SHAPE_CONTEXT = "https://registry.lab.gaia-x.eu/main/context/2411";
-
-    private static final Set<String> SUPPORTED_CONTEXTS = Set.of(
-        "https://registry.gaia-x.eu/v2206/api/shape",
-        "https://registry.lab.gaia-x.eu/main/context/2411"
-    );
-
+    private static final String GAIAX_2206_CONTEXT = "https://registry.gaia-x.eu/v2206/api/shape";
+    private static final String GAIAX_2411_CONTEXT = "https://registry.lab.gaia-x.eu/main/context/2411";
     private static final String GAIAX_LEGAL_PERSON_TYPE = "LegalPerson";
 
-    public GaiaxParticipantClaimsEvaluationFunction(Monitor monitor, ObjectMapper mapper, Function<GaiaxParticipantClaims, Object> navigation) {
+    private final Set<String> supportedContexts;
+
+    public GaiaxParticipantClaimsEvaluationFunction(
+            Monitor monitor, 
+            ObjectMapper mapper, 
+            Function<GaiaxParticipantClaims, Object> navigation,
+            String mockRegistryUrl) {
         super(monitor, mapper, navigation);
+        
+        if (mockRegistryUrl != null && !mockRegistryUrl.isEmpty()) {
+            this.supportedContexts = Set.of(GAIAX_2206_CONTEXT, GAIAX_2411_CONTEXT, mockRegistryUrl);
+        } else {
+            this.supportedContexts = Set.of(GAIAX_2206_CONTEXT, GAIAX_2411_CONTEXT);
+        }
     }
 
     @Override
     protected Predicate<VerifiableCredential> credentialFilter() {
         return credential ->
             credential.getCredentialSchema().stream()
-                    .anyMatch(schema -> SUPPORTED_CONTEXTS.contains(schema.id()))
+                    .anyMatch(schema -> supportedContexts.contains(schema.id()))
             && credential.getType().contains(GAIAX_LEGAL_PERSON_TYPE);
     }
 

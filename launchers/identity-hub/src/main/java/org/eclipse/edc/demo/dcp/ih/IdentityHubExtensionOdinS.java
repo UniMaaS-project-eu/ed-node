@@ -37,15 +37,19 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneOffset;
+
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 
 import static org.eclipse.edc.spi.constants.CoreConstants.JSON_LD;
 
@@ -97,6 +101,39 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
     @Setting(key = "unimaas.oidc.idp.client.id", description = "Client ID for Keycloak", required = true)
     private String oidcClientId;
 
+    // Duplicate handling strategies
+    @Setting(key = "unimaas.credentials.membership.duplicate.strategy", 
+             description = "Strategy for handling duplicate MembershipCredential: SKIP_IF_EXISTS, REPLACE_ALWAYS, KEEP_NEWEST, KEEP_OLDEST, ALLOW_DUPLICATES", 
+             defaultValue = "REPLACE_ALWAYS")
+    private String membershipDuplicateStrategy;
+
+    @Setting(key = "unimaas.credentials.dataprocessor.duplicate.strategy", 
+             description = "Strategy for handling duplicate DataProcessorCredential", 
+             defaultValue = "REPLACE_ALWAYS")
+    private String dataProcessorDuplicateStrategy;
+
+    @Setting(key = "unimaas.credentials.gaiax.duplicate.strategy", 
+             description = "Strategy for handling duplicate GAIA-X Credential", 
+             defaultValue = "REPLACE_ALWAYS")
+    private String gaiaxDuplicateStrategy;
+
+    // Periodic Renewal
+    @Setting(key = "unimaas.credentials.renewal.check.interval.minutes", 
+             description = "Interval in minutes to check credentials for renewal", 
+             defaultValue = "1400")
+    private String renewalCheckIntervalMinutes;
+
+    @Setting(key = "unimaas.credentials.renewal.expiry.threshold.days", 
+             description = "Days before expiration to trigger renewal", 
+             defaultValue = "30")
+    private String renewalExpiryThresholdDays;
+
+    @Setting(key = "unimaas.credentials.renewal.enabled", 
+             description = "Enable automatic credential renewal", 
+             defaultValue = "true")
+    private String renewalEnabled;
+
+
     @Inject
     private CredentialStore store;
 
@@ -106,6 +143,8 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
     private Monitor monitor;
     private HttpClient httpClient;
     private ObjectMapper objectMapper;
+    private CredentialManager credentialManager;
+    private ScheduledExecutorService scheduler;
 
     @Override
     public void initialize(ServiceExtensionContext context) {
@@ -124,6 +163,18 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
 
         monitor.info("Keycloak OIDC endpoint: %s://%s:%s%s"
                 .formatted(oidcProtocol, oidcHost, oidcPort, oidcPath));
+
+        monitor.info("Duplicate strategies - Membership: %s, DataProcessor: %s, GAIA-X: %s"
+                .formatted(membershipDuplicateStrategy, dataProcessorDuplicateStrategy, gaiaxDuplicateStrategy));
+
+        boolean isRenewalEnabled = Boolean.parseBoolean(renewalEnabled);
+        int checkInterval = Integer.parseInt(renewalCheckIntervalMinutes);
+        int expiryThreshold = Integer.parseInt(renewalExpiryThresholdDays);
+        
+        monitor.info("Credential renewal: %s (check every %d minutes, renew %d days before expiry)"
+                .formatted(isRenewalEnabled ? "ENABLED" : "DISABLED", checkInterval, expiryThreshold));
+
+        credentialManager = new CredentialManager(store, monitor);
     }
 
     @Override
@@ -144,13 +195,176 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             // Third create the GAIA-X 22.06/24.11 Credential.
             storeGAIAXCredential(accessToken);
 
+            // Start periodic renewal scheduler if enabled
+            if (Boolean.parseBoolean(renewalEnabled)) {
+                startPeriodicRenewal();
+            }
+
         } catch (Exception e) {
             monitor.severe("Error in startup process", e);
             throw new RuntimeException("Failed to complete startup process", e);
         }
     }
 
+    private void startPeriodicRenewal() {
+        int checkInterval = Integer.parseInt(renewalCheckIntervalMinutes);
+        scheduler = Executors.newScheduledThreadPool(1);
+        
+        monitor.info("Starting periodic credential renewal scheduler (every %d minutes)".formatted(checkInterval));
+        
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                monitor.info("========================================");
+                monitor.info("Starting periodic credential check");
+                monitor.info("========================================");
+                checkAndRenewCredentials();
+            } catch (Exception e) {
+                monitor.severe("Error during periodic credential check", e);
+            }
+        }, checkInterval, checkInterval, TimeUnit.MINUTES);
+    }
+
+    private void checkAndRenewCredentials() {
+        try {
+            int thresholdDays = Integer.parseInt(renewalExpiryThresholdDays);
+            LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+            LocalDateTime thresholdDate = now.plusDays(thresholdDays);
+
+            // Verificar MembershipCredential
+            checkAndRenewCredential("MembershipCredential", thresholdDate, this::renewMembershipCredential);
+
+            // Verificar DataProcessorCredential (requiere JWT de Keycloak)
+            String accessToken = obtainJWTKeyCloak();
+            checkAndRenewCredential("DataProcessorCredential", thresholdDate, 
+                    () -> renewDataProcessorCredential(accessToken));
+
+            // Verificar GAIA-X Credential
+            checkAndRenewCredential("LegalPerson", thresholdDate, 
+                    () -> renewGAIAXCredential(accessToken));
+
+            monitor.info("Periodic credential check completed successfully");
+
+        } catch (Exception e) {
+            monitor.severe("Error during credential renewal process", e);
+        }
+    }
+
+    private void checkAndRenewCredential(String credentialType, LocalDateTime thresholdDate, 
+                                         RenewalAction renewalAction) {
+        try {
+            monitor.info("Checking %s...".formatted(credentialType));
+            
+            // Buscar credencial existente en el store
+            List<VerifiableCredentialResource> credentials = findCredentialsByType(credentialType);
+
+            if (credentials.isEmpty()) {
+                monitor.warning("⚠️ No %s found. Creating new credential...".formatted(credentialType));
+                renewalAction.execute();
+                return;
+            }
+
+            // Verificar la fecha de expiración de cada credencial encontrada
+            boolean needsRenewal = false;
+            for (VerifiableCredentialResource credential : credentials) {
+                LocalDateTime expirationDate = extractExpirationDate(credential);
+                
+                if (expirationDate == null) {
+                    monitor.warning("⚠️ %s has no expiration date. Renewing as precaution..."
+                            .formatted(credentialType));
+                    needsRenewal = true;
+                    break;
+                }
+
+                if (expirationDate.isBefore(thresholdDate)) {
+                    monitor.warning("⚠️ %s expires on %s (within threshold). Renewing..."
+                            .formatted(credentialType, expirationDate));
+                    needsRenewal = true;
+                    break;
+                }
+
+                monitor.info("✅ %s is valid until %s".formatted(credentialType, expirationDate));
+            }
+
+            if (needsRenewal) {
+                renewalAction.execute();
+            }
+
+        } catch (Exception e) {
+            monitor.severe("Error checking %s: %s".formatted(credentialType, e.getMessage()), e);
+        }
+    }
+
+    private List<VerifiableCredentialResource> findCredentialsByType(String credentialType) {
+        List<VerifiableCredentialResource> result = new ArrayList<>();
+        
+        try {
+            var allCredentials = store.query(
+                    org.eclipse.edc.spi.query.QuerySpec.Builder.newInstance().build());
+            
+            for (var credential : allCredentials.getContent()) {
+                if (credential.getVerifiableCredential() != null && 
+                    credential.getVerifiableCredential().credential() != null) {
+                    
+                    var types = credential.getVerifiableCredential().credential().getType();
+                    if (types != null && types.contains(credentialType)) {
+                        result.add(credential);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            monitor.warning("Error querying credentials: %s".formatted(e.getMessage()), e);
+        }
+        
+        return result;
+    }
+
+    private LocalDateTime extractExpirationDate(VerifiableCredentialResource credential) {
+        try {
+            Instant expirationInstant = credential.getVerifiableCredential()
+                    .credential()
+                    .getExpirationDate();
+            
+            if (expirationInstant == null) {
+                return null;
+            }
+
+            // Convertir Instant a LocalDateTime en UTC
+            return LocalDateTime.ofInstant(expirationInstant, ZoneOffset.UTC);
+
+        } catch (Exception e) {
+            monitor.warning("Could not parse expiration date: %s".formatted(e.getMessage()));
+            return null;
+        }
+    }
+
+    private void renewMembershipCredential() throws IOException, InterruptedException {
+        monitor.info("Renewing MembershipCredential...");
+        storeDefaultScopeCredential();
+    }
+
+    private void renewDataProcessorCredential(String accessToken) {
+        monitor.info("Renewing DataProcessorCredential...");
+        storeExtraScopeCredential(accessToken);
+    }
+
+    private void renewGAIAXCredential(String accessToken) {
+        monitor.info("Renewing GAIA-X Credential...");
+        storeGAIAXCredential(accessToken);
+    }
+
+    @FunctionalInterface
+    private interface RenewalAction {
+        void execute() throws IOException, InterruptedException;
+    }
+
+
+
+
     private void storeDefaultScopeCredential() throws IOException, InterruptedException {
+        monitor.info("========================================");
+        monitor.info("Processing MembershipCredential");
+        monitor.info("========================================");
+
         // Create the default credential request payload
         ObjectNode credentialRequest = createMembershipCredentialPayloadRequest();
 
@@ -158,13 +372,27 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         VerifiableCredentialResource credential = requestCredentialFromIssuer(credentialRequest, issuerPort, issuerPath);
 
         if (credential != null) {
-            store.create(credential);
-            monitor.info("Successfully stored default scope for participant: %s".formatted(participantDid));
+            //store.create(credential);
+            //monitor.info("Successfully stored default scope for participant: %s".formatted(participantDid));
+
+            // Use credential manager with configured strategy
+            CredentialManager.DuplicateStrategy strategy = parseStrategy(membershipDuplicateStrategy);
+            boolean stored = credentialManager.storeCredential(credential, strategy);
+            
+            if (stored) {
+                monitor.info("✅ MembershipCredential stored successfully");
+            } else {
+                monitor.info("ℹ️ MembershipCredential was not stored (duplicate handling)");
+            }
+        } else {
+            monitor.warning("❌ Failed to obtain MembershipCredential from issuer");
         }
     }
 
     private String obtainJWTKeyCloak() throws IOException, InterruptedException {
-        monitor.info("Starting Keycloak authentication...");
+        monitor.info("========================================");
+        monitor.info("Authenticating with Keycloak");
+        monitor.info("========================================");
         
         // Construct Keycloak Token Endpoint URL
         String keycloakTokenEndpoint = "%s://%s:%s%s".formatted(
@@ -191,7 +419,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         monitor.debug("Keycloak response status: %d".formatted(response.statusCode()));
-        monitor.debug("Keycloak response body: %s".formatted(response.body()));
+        //monitor.debug("Keycloak response body: %s".formatted(response.body()));
 
         if (response.statusCode() == 200) {
             try {
@@ -285,6 +513,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
 
             // Extract roles recursively
             Set<String> roles = extractRolesRecursive(payload);
+            //monitor.info("Extracted roles: %s".formatted(roles));
 
             // Create credential of type DataProcessor
             ObjectNode dataProcessorRequest = createDataProcessorCredentialPayloadRequest(payload, roles);
@@ -293,8 +522,20 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             VerifiableCredentialResource credential = requestCredentialFromIssuer(dataProcessorRequest, issuerPort, issuerPath);
 
             if (credential != null) {
-                store.create(credential);
-                monitor.info("Successfully stored DataProcessorCredential for participant: %s".formatted(participantDid));
+                //store.create(credential);
+                //monitor.info("Successfully stored DataProcessorCredential for participant: %s".formatted(participantDid));
+
+                // Use credential manager with configured strategy
+                CredentialManager.DuplicateStrategy strategy = parseStrategy(dataProcessorDuplicateStrategy);
+                boolean stored = credentialManager.storeCredential(credential, strategy);
+                
+                if (stored) {
+                    monitor.info("✅ DataProcessorCredential stored successfully");
+                } else {
+                    monitor.info("ℹ️ DataProcessorCredential was not stored (duplicate handling)");
+                }
+            } else {
+                monitor.warning("❌ Failed to obtain DataProcessorCredential from issuer");
             }
 
         } catch (Exception e) {
@@ -319,6 +560,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
 
             // Extract roles recursively
             Set<String> roles = extractRolesRecursive(payload);
+            //monitor.info("Extracted roles: %s".formatted(roles));
 
             // Create credential of type GAIA-X
             ObjectNode dataGAIAXRequest = createGAIAXCredentialPayloadRequest(payload, roles);
@@ -327,8 +569,20 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             VerifiableCredentialResource credential = requestCredentialFromIssuer(dataGAIAXRequest, issuerGAIAXPort, issuerGAIAXPath);
 
             if (credential != null) {
-                store.create(credential);
-                monitor.info("Successfully stored GAIA-X Credential for participant: %s".formatted(participantDid));
+                //store.create(credential);
+                //monitor.info("Successfully stored GAIA-X Credential for participant: %s".formatted(participantDid));
+
+                // Use credential manager with configured strategy
+                CredentialManager.DuplicateStrategy strategy = parseStrategy(gaiaxDuplicateStrategy);
+                boolean stored = credentialManager.storeCredential(credential, strategy);
+                
+                if (stored) {
+                    monitor.info("✅ GAIA-X Credential stored successfully");
+                } else {
+                    monitor.info("ℹ️ GAIA-X Credential was not stored (duplicate handling)");
+                }
+            } else {
+                monitor.warning("❌ Failed to obtain GAIA-X Credential from issuer");
             }
 
         } catch (Exception e) {
@@ -529,10 +783,35 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         }
     }
 
+    private CredentialManager.DuplicateStrategy parseStrategy(String value) {
+        if (value == null || value.isBlank()) {
+            monitor.warning("No duplicate strategy provided. Defaulting to REPLACE_ALWAYS.");
+            return CredentialManager.DuplicateStrategy.REPLACE_ALWAYS;
+        }
+        try {
+            return CredentialManager.DuplicateStrategy.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            monitor.warning("Invalid duplicate strategy '%s'. Defaulting to REPLACE_ALWAYS.".formatted(value));
+            return CredentialManager.DuplicateStrategy.REPLACE_ALWAYS;
+        }
+    }
+
     @Override
     public void shutdown() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            monitor.info("Shutting down credential renewal scheduler...");
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
         if (httpClient != null) {
             monitor.debug("IdentityHub Extension shutting down");
         }
-    } 
+    }
 }

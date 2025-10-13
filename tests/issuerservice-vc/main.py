@@ -3,12 +3,11 @@ import time
 import uuid
 import json
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError
-from typing import List, Optional
 import jwt  # PyJWT
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -18,6 +17,7 @@ from cryptography.hazmat.backends import default_backend
 # Configuration
 # -----------------------
 ISSUER_DID = os.getenv("ISSUER_DID", "did:web:localhost%3A9876:issuerservicevc")
+VC_CONTEXT_URL = os.environ.get("VC_CONTEXT_URL", "https://registry.lab.gaia-x.eu/main/context/2411")
 PRIVATE_KEY_PATH = os.getenv("PRIVATE_KEY_PATH", "/app/keys/issuer_private.pem")
 EXPIRY_DAYS = int(os.getenv("EXPIRY_DAYS", "365"))
 
@@ -75,7 +75,7 @@ class IssueGaiaxCredentialRequest(BaseModel):
     addressCode: Optional[str] = Field(None, description="Address subdivision code")
     streetAddress: Optional[str] = Field(None, description="Street address")
     postalCode: Optional[str] = Field(None, description="Postal code")
-    roles: Optional[List[str]] = Field(None, description="List of participant roles (e.g., ['DataProvider', 'DataConsumer'])")
+    roles: Optional[List[str]] = Field(None, description="List of participant roles")
 
 
     class Config:
@@ -204,8 +204,13 @@ async def issue_credential(request: Request):
 
     # Create JWT
     now = datetime.now(tz=timezone.utc)
-    exp = now + timedelta(days=EXPIRY_DAYS)
+    now_truncated = now.replace(microsecond=0)
+    exp = now_truncated + timedelta(days=EXPIRY_DAYS)
+    expiration_epoch = int(exp.timestamp())
+    expiration_iso = exp.isoformat().replace("+00:00", "Z")
 
+    print(f"[DEBUG] Expiration date set to: {expiration_iso} (epoch: {expiration_epoch})")
+    
     claims = {
         "iss": ISSUER_DID,
         "sub": payload.participantDid,
@@ -232,7 +237,7 @@ async def issue_credential(request: Request):
         print(f"[ERROR] Error creating JWT: {e}")
         raise HTTPException(status_code=500, detail=f"Error creating JWT: {str(e)}")
 
-    # Process issue date
+    # Process issuance date
     issuance_date_iso = payload.credential.get("issuanceDate")
     issuance_epoch = None
     if issuance_date_iso:
@@ -272,7 +277,7 @@ async def issue_credential(request: Request):
                     "additionalProperties": {}
                 },
                 "issuanceDate": issuance_epoch,
-                "expirationDate": None,
+                "expirationDate": expiration_iso,
                 "credentialStatus": None,
                 "description": None,
                 "name": None,
@@ -334,7 +339,14 @@ async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
         raise HTTPException(status_code=503, detail="Service not initialized")
 
     now = datetime.now(tz=timezone.utc)
-    exp = now + timedelta(days=EXPIRY_DAYS)
+    now_truncated = now.replace(microsecond=0)
+    now_truncated_iso = now_truncated.isoformat().replace("+00:00", "Z")
+    exp = now_truncated + timedelta(days=EXPIRY_DAYS)
+    expiration_epoch = int(exp.timestamp())
+    expiration_iso = exp.isoformat().replace("+00:00", "Z")
+
+    print(f"[DEBUG] Expiration date set to: {expiration_iso} (epoch: {expiration_epoch})")
+
     credential_id = f"https://issuer.example.com/credentials/{uuid.uuid4()}"
 
     # Build credential claims
@@ -371,22 +383,20 @@ async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
         "vc": {
             "@context": [
                 "https://www.w3.org/2018/credentials/v1",
-#                "https://registry.gaia-x.eu/v2206/api/shape"
-                "https://registry.lab.gaia-x.eu/main/context/2411"
+                VC_CONTEXT_URL
             ],
             "id": credential_id,
             "type": ["VerifiableCredential", "LegalPerson"],
             "credentialSubject": credential_subject,
             "credentialSchema": [
                 {
-#                    "id": "https://registry.gaia-x.eu/v2206/api/shape",
-                    "id": "https://registry.lab.gaia-x.eu/main/context/2411",
+                    "id": VC_CONTEXT_URL,                    
                     "type": "JsonSchemaValidator2018"
                 }
             ],
             "issuer": ISSUER_DID,
-            "issuanceDate": now.isoformat().replace("+00:00", "Z"),
-            "expirationDate": exp.isoformat().replace("+00:00", "Z")
+            "issuanceDate": now_truncated_iso,
+            "expirationDate": expiration_iso
         }
     }
 
@@ -455,23 +465,29 @@ async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
         raise HTTPException(status_code=503, detail="Service not initialized")#
 
     now = datetime.now(tz=timezone.utc)
-    exp = now + timedelta(days=EXPIRY_DAYS)
+    now_truncated = now.replace(microsecond=0)
+    now_truncated_iso = now_truncated.isoformat().replace("+00:00", "Z")
+    exp = now_truncated + timedelta(days=EXPIRY_DAYS)
+    expiration_epoch = int(exp.timestamp())
+    expiration_iso = exp.isoformat().replace("+00:00", "Z")
+
+    print(f"[DEBUG] Expiration date set to: {expiration_iso} (epoch: {expiration_epoch})")
+
     credential_id = f"https://issuer.example.com/credentials/{uuid.uuid4()}"
 
     # Build the credential in JSON-LD format (not JWT)
     credential = {
         "@context": [
             "https://www.w3.org/2018/credentials/v1",
-            #"https://registry.gaia-x.eu/v2206/api/shape"
-            "https://registry.lab.gaia-x.eu/main/context/2411"
+            VC_CONTEXT_URL            
         ],
         "id": credential_id,
         "type": ["VerifiableCredential", "LegalPerson"],
         "issuer": {
             "id": ISSUER_DID
         },
-        "issuanceDate": now.isoformat(),
-        "expirationDate": exp.isoformat(),
+        "issuanceDate": now_truncated_iso,
+        "expirationDate": expiration_iso,
         "credentialSubject": {
             "id": payload.participantDid,
             "gx-participant:legalName": payload.legalName,

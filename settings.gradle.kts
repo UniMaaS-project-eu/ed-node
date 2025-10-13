@@ -44,4 +44,4 @@ include(":launchers:connector")
 // TrustFramework GAIA-X --> 20250929
 include(":extensions:common:trust-framework-policies:trust-framework-policies-core")
 include(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant")
-include(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld")
+//include(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld")

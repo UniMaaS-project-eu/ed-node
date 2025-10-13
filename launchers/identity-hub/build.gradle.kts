@@ -25,7 +25,7 @@ dependencies {
     // ############### TrustFramework GAIA-X --> 20250929 ###############
     //runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-core"))
     //runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant"))
-    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld"))
+//    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld"))
     
     // -> IdentityHub SPI
     implementation(libs.edc.ih.spi) // needed in the extensions here

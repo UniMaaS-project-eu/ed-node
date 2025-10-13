@@ -33,6 +33,7 @@ services:
 #      - "${ISSUERSERVICEVC_PORT}:9090" #DEPRECATED (20250923): External access via NGINX redirects
     environment:
       - ISSUER_DID=${ISSUER_DID}
+      - VC_CONTEXT_URL=${VC_CONTEXT_URL}
 #      - PRIVATE_KEY_PATH=/app/keys/issuer_private.pem
       - EXPIRY_DAYS=${EXPIRY_DAYS}
     volumes:

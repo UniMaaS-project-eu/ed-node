@@ -149,13 +149,13 @@ services:
     image: unimaas/edc-identityhub:1.0
     hostname: edc-ih-${ED_NODE_INSTANCE_NAME}
     container_name: edc-ih-${ED_NODE_INSTANCE_NAME}
-#    ports:
-#      - "7090:7090" --> IH_API_PORT WAS DEPRECATED (20250923): Not exposed port
-#      - "7091:7091" --> IH_CREDENTIALS_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
-#      - "7092:7092" --> IH_IDENTITY_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
-##      - "7093:7093" --> IH_DID_PORT WAS DEPRECATED (20250923): Not used
-##      - "7094:7094" --> IH_VERSION_PORT WAS DEPRECATED (20250923): Not used
-##      - "7095:7095" --> IH_STS_PORT WAS DEPRECATED (20250923): Not used
+    #ports-noused:
+    #  - "7090:7090" --> IH_API_PORT WAS DEPRECATED (20250923): Not exposed port
+    #  - "7091:7091" --> IH_CREDENTIALS_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  - "7092:7092" --> IH_IDENTITY_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  #- "7093:7093" --> IH_DID_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "7094:7094" --> IH_VERSION_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "7095:7095" --> IH_STS_PORT WAS DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
@@ -226,10 +226,26 @@ services:
       - UNIMAAS_OIDC_IDP_CLIENT_ID=${UNIMAAS_OIDC_IDP_CLIENT_ID}
       - UNIMAAS_OIDC_IDP_CLIENT_SECRET=${UNIMAAS_OIDC_IDP_CLIENT_SECRET}
 
-      #PDTE_JUAN: 20250921
-      ########################### VP Context Manager Configuration ###########################
-      #- EDC_CONNECTOR_INTERNAL_URL=http://edc-connector-${ED_NODE_INSTANCE_NAME}:8081  
+      # ===========================================
+      # VCs Credential Manager Duplicate handling strategies
+      # ===========================================
+      # Options: SKIP_IF_EXISTS, REPLACE_ALWAYS, KEEP_NEWEST, KEEP_OLDEST, ALLOW_DUPLICATES
+      - UNIMAAS_CREDENTIALS_MEMBERSHIP_DUPLICATE_STRATEGY=${UNIMAAS_CREDENTIALS_MEMBERSHIP_DUPLICATE_STRATEGY}
+      - UNIMAAS_CREDENTIALS_DATAPROCESSOR_DUPLICATE_STRATEGY=${UNIMAAS_CREDENTIALS_DATAPROCESSOR_DUPLICATE_STRATEGY}
+      - UNIMAAS_CREDENTIALS_GAIAX_DUPLICATE_STRATEGY=${UNIMAAS_CREDENTIALS_GAIAX_DUPLICATE_STRATEGY}
       
+      # ===========================================
+      # VCs Renewal strategy
+      # ===========================================
+      # Enable/Disable
+      - UNIMAAS_CREDENTIALS_RENEWAL_ENABLED=${UNIMAAS_CREDENTIALS_RENEWAL_ENABLED}
+      
+      # Verification interval in minutes (default every 1440 min = 1 day)
+      - UNIMAAS_CREDENTIALS_RENEWAL_CHECK_INTERVAL_MINUTES=${UNIMAAS_CREDENTIALS_RENEWAL_CHECK_INTERVAL_MINUTES}
+
+      # Margin of days before expiration to renew (default 30 days)
+      - UNIMAAS_CREDENTIALS_RENEWAL_EXPIRY_THRESHOLD_DAYS=${UNIMAAS_CREDENTIALS_RENEWAL_EXPIRY_THRESHOLD_DAYS}
+
       ########################### PostgreSQL persistence ###########################
       ###### Connection data is included in Vault via the "vault-init.sh" script. ######
       # BBDD default
@@ -290,16 +306,16 @@ services:
     image: unimaas/edc-connector:1.0
     hostname: edc-connector-${ED_NODE_INSTANCE_NAME}
     container_name: edc-connector-${ED_NODE_INSTANCE_NAME}
-#    ports:
-##      - "8080:8080" --> CONNECTOR_API_PORT WAS DEPRECATED (20250923): Not used
-#      - "8081:8081" --> CONNECTOR_API_MANAGEMENT_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
-#      - "8082:8082" --> CONNECTOR_CALLBACK_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
-##      - "8083:8083" --> CONNECTOR_API_CONTROL_PORT WAS DEPRECATED (20250923): Not used
-##      - "8084:8084" --> CONNECTOR_CATALOG_PORT WAS DEPRECATED (20250923): Not used
-##      - "8085:8085" --> CONNECTOR_VERSION_PORT WAS DEPRECATED (20250923): Not used
-#      - "11001:11001" --> CONNECTOR_PUBLIC_API_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
-##      - "9091:9091" --> CONNECTOR_DATAPLANE_PUBLIC_PORT WAS DEPRECATED (20250923): Not used
-##      - "9092:9092" --> CONNECTOR_DATAPLANE_SIGNALING_PORT WAS DEPRECATED (20250923): Not used
+    #ports-noused:
+    #  #- "8080:8080" --> CONNECTOR_API_PORT WAS DEPRECATED (20250923): Not used
+    #  - "8081:8081" --> CONNECTOR_API_MANAGEMENT_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  - "8082:8082" --> CONNECTOR_CALLBACK_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  #- "8083:8083" --> CONNECTOR_API_CONTROL_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "8084:8084" --> CONNECTOR_CATALOG_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "8085:8085" --> CONNECTOR_VERSION_PORT WAS DEPRECATED (20250923): Not used
+    #  - "11001:11001" --> CONNECTOR_PUBLIC_API_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  #- "9091:9091" --> CONNECTOR_DATAPLANE_PUBLIC_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "9092:9092" --> CONNECTOR_DATAPLANE_SIGNALING_PORT WAS DEPRECATED (20250923): Not used
     networks:
       - edc-network-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
@@ -314,6 +330,7 @@ services:
         condition: service_healthy
 #      edc-ih-seed-connector:
 #        condition: service_completed_successfully
+
     volumes:
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault-token:ro
     environment:
@@ -379,8 +396,10 @@ services:
       ########################### IssuerService-VC Link ###########################
       - UNIMAAS_ISSUERSERVICEVC_DID=${UNIMAAS_ISSUERSERVICEVC_DID}
 
-      ########################### Require extra VC for CatalogRequest ###########################
+      ########################### Local Mock Registry Link ###########################
+      - UNIMAAS_MOCKREGISTRY_CONTEXT_URL=${MOCKREGISTRY_CONTEXT_URL}
 
+      ########################### Require extra VC for CatalogRequest ###########################
       - UNIMAAS_ENABLE_EXTRA_VP_CATALOGREQUEST=${CONNECTOR_UNIMAAS_ENABLE_EXTRA_VP_CATALOGREQUEST}
 
       ########################### Vault Link ###########################

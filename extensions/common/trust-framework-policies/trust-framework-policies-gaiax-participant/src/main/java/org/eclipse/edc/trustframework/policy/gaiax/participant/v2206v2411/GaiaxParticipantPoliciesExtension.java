@@ -25,6 +25,7 @@ import org.eclipse.edc.policy.engine.spi.RuleBindingRegistry;
 import org.eclipse.edc.policy.model.Permission;
 import org.eclipse.edc.runtime.metamodel.annotation.Extension;
 import org.eclipse.edc.runtime.metamodel.annotation.Inject;
+import org.eclipse.edc.runtime.metamodel.annotation.Setting;
 import org.eclipse.edc.spi.system.ServiceExtension;
 import org.eclipse.edc.spi.system.ServiceExtensionContext;
 import org.eclipse.edc.spi.types.TypeManager;
@@ -43,6 +44,11 @@ public class GaiaxParticipantPoliciesExtension implements ServiceExtension {
 //    private static final String ALL_SCOPE = "*";
 
     public static final String NAME = "Gaia-X Participant Policies";
+
+    @Setting(key = "unimaas.mockregistry.context.url", 
+             description = "Local GAIA-X mock registry service", 
+             defaultValue = "http://localhost/main/context/2411")
+    private String mockRegistryUrl;
 
     @Inject
     private PolicyEngine policyEngine;
@@ -90,7 +96,8 @@ public class GaiaxParticipantPoliciesExtension implements ServiceExtension {
                     var function = new GaiaxParticipantClaimsEvaluationFunction(
                             context.getMonitor(),
                             typeManager.getMapper(),
-                            navigation);
+                            navigation,
+                            mockRegistryUrl);
 
                     // Permission
                     bindPermissionFunction(function, TransferProcessPolicyContext.class, TransferProcessPolicyContext.TRANSFER_SCOPE, name);
@@ -137,5 +144,4 @@ public class GaiaxParticipantPoliciesExtension implements ServiceExtension {
     //    policyEngine.registerFunction(contextClass, Duty.class, constraintType, castedFunction);
     //}
 }
-
 

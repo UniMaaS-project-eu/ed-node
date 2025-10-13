@@ -7,14 +7,14 @@ Configure `.env` file, define the administrator credentials.
 # 1 - Deploy
 
 ```sh
-cd tests/issuerservice-vc/; 
-docker-compose build; docker-compose up -d
+cd tests/keycloak/; 
+docker compose build; docker compose up -d
 ```
 
 # 2 - LOGS Monitor
 
 ```sh
-sleep 4; docker logs -f issuerservicevc
+sleep 4; docker logs -f keycloak
 ```
 
 # 3 - Create Client Keycloak

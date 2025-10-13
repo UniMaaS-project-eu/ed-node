@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  mock-registry:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    hostname: mock-registry
+    container_name: mock-registry
+    ports:
+      - "${MOCKREGISTRY_EXPOSED_PORT}:8080"
+    volumes:
+      - ./contexts:/app/contexts:ro
+    networks:
+      edc-network:
+    restart: unless-stopped
+    environment:
+      - CONTEXT_URL=${CONTEXT_URL}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  edc-network:
+    driver: bridge

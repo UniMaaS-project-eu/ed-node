@@ -27,7 +27,7 @@ dependencies {
     // TrustFramework GAIA-X --> 20250929
     runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-core"))
     runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant"))
-    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld"))
+//    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld"))
 
     // ################### Checkpoint http://localhost:9191/api/check/health ###################
     implementation(libs.edc.api.observability)

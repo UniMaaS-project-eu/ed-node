@@ -41,20 +41,32 @@ Deploy with:
 
 ```sh
 cd tests/issuerservice-vc/;
-./deploy.sh <instanceName> or ./deploy.sh <instanceName> recreate
+./deploy.sh <instanceName> or ./deploy.sh <instanceName> build_up
 #For instance: ./deploy.sh issuerservicevc
 ```
 
-**NOTE:** For simulating `docker-compose down -v` executes:
+**NOTE:** For simulating `docker compose down -v` executes:
 ```sh
-./deploy.sh <instanceName> removeall
-#For instance: ./deploy.sh issuerservicevc removeall
+./deploy.sh <instanceName> down-v
+#For instance: ./deploy.sh issuerservicevc down-v
 ```
 
-**NOTE:** For simulating `docker-compose down -v; docker-compose build; docker-compose up -d` executes:
+**NOTE:** For simulating `docker compose down -v; docker compose build; docker compose up -d` executes:
 ```sh
 ./deploy.sh <instanceName> fromzero
 #For instance: ./deploy.sh issuerservicevc fromzero
+```
+
+**NOTE:** For simulating `docker compose restart` executes:
+```sh
+./deploy.sh <instanceName> restart
+#For instance: ./deploy.sh issuerservicevc restart
+```
+
+**NOTE:** For simulating `docker compose stop` executes:
+```sh
+./deploy.sh <instanceName> stop
+#For instance: ./deploy.sh issuerservicevc stop
 ```
 
 # 3 - LOGS Monitor

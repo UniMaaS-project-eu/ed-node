@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 #
-# This script manages a Docker Compose instance.
+# This script manages a Docker-Compose instance.
 # It takes the instance name and an optional mode for the 'down' command.
 #
 # Usage: $0 <instance_name> [mode]
 #
 # Available modes:
-#   recreate (default): Only builds and brings up containers, skipping the 'down' command.
-#   fromzero: Executes 'docker-compose down -v', 'docker-compose build' and 'docker-compose up -d'.
-#   removeall: Executes 'docker-compose down -v'.
-
+#   build_up (default): Only builds and brings up containers, skipping the 'down' command.
+#   down-v: Executes 'docker compose down -v'.
+#   fromzero: Executes 'docker compose down -v', 'docker compose build' and 'docker compose up -d'.
+#   restart: Executes 'docker compose restart'.
+#   stop: Executes 'docker compose stop'.
 
 set -e
 
@@ -21,32 +22,37 @@ MODE=$2
 if [[ "$INSTANCE_NAME" == "-h" || "$INSTANCE_NAME" == "--help" ]]; then
   echo "Usage: $0 <instance_name> [mode]"
   echo
-  echo "Manages a Docker Compose instance by giving it a unique project name."
+  echo "Manages a Docker-Compose instance by giving it a unique project name."
   echo "The script performs the following actions:"
   echo "1. Exports variables from the '.env' file."
   echo "2. Generates a 'nginx--<instance_name>.conf' file from a template."
-  echo "3. Executes 'docker-compose down' command based on the specified mode, affecting only the specified project."
+  echo "3. Executes 'docker compose down' command based on the specified mode, affecting only the specified project."
   echo "4. Builds the images for the specified project."
   echo "5. Lifts the containers in 'detached' mode for the specified project."
   echo
   echo "Parameters:"
   echo "  <instance_name>  The name of the instance to manage. This will be used as the Docker project name."
   echo "                   Required."
-  echo "  [mode]           The mode for the 'down' command. Optional."
-  echo "                   If not specified, 'recreate' mode is used."
+  echo "  [mode]           Optional: If not specified, 'build_up' mode is used."
   echo
   echo "Modes for the 'down' command:"
-  echo "  recreate (or blank)   Skips the 'down' command completely, only performing 'build' and 'up'."
+  echo "  build_up (or blank)   Skips the 'down' command completely, only performing 'build' and 'up'."
+  echo "  down-v                Stops services and removes containers and volumes for the project."
+  echo "                        Equivalent to 'docker compose down -v'."
   echo "  fromzero              Stops services and removes containers and volumes for the project."
-  echo "                        Equivalent to 'docker-compose down -v', finally performing 'build' and 'up'."
-  echo "  removeall             Stops services and removes containers and volumes for the project."
-  echo "                        Equivalent to 'docker-compose down -v'."
+  echo "                        Equivalent to 'docker compose down -v', finally performing 'build' and 'up'."
+  echo "  restart               Restarts services (containers) for the project."
+  echo "                        Equivalent to 'docker compose restart'."
+  echo "  stop                  Stops services (containers) for the project."
+  echo "                        Equivalent to 'docker compose stop'."
   echo
   echo "Examples:"
-  echo "  $0 my-app"
-  echo "  $0 my-app recreate"
-  echo "  $0 my-app fromzero"
-  echo "  $0 my-app removeall"
+  echo "  $0 instance_name1"
+  echo "  $0 instance_name1 build_up"
+  echo "  $0 instance_name1 down-v"
+  echo "  $0 instance_name1 fromzero"
+  echo "  $0 instance_name1 restart"
+  echo "  $0 instance_name1 stop"
   exit 0
 fi
 
@@ -79,24 +85,34 @@ envsubst '$ISSUERSERVICEVC_INSTANCE_NAME' < nginx/nginx-template.conf > nginx/ng
 
 # Determine which 'down' command to run based on the mode
 case "$MODE" in
-  recreate|"")
+  build_up|"")
     echo "Skipping the 'down' step..."
+    ;;
+  down-v)
+    echo "Executing 'down -v' (down-v mode)..."
+    docker compose down -v
+    echo "Process completed for instance '$INSTANCE_NAME'!"
+    exit 0
     ;;
   fromzero)
     echo "Executing 'down -v' (fromzero mode)..."
-    #docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml down -v
-    docker-compose down -v
+    docker compose down -v
     ;;
-  removeall)
-    echo "Executing 'down -v' (removeall mode)..."
-    #docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml down -v
-    docker-compose down -v
+  restart)
+    echo "Executing 'restart' (restart mode)..."
+    docker compose restart
+    echo "Process completed for instance '$INSTANCE_NAME'!"
+    exit 0
+    ;;
+  stop)
+    echo "Executing 'stop' (stop mode)..."
+    docker compose stop
     echo "Process completed for instance '$INSTANCE_NAME'!"
     exit 0
     ;;
   *)
     echo "Invalid mode: $MODE"
-    echo "Available modes: recreate, fromzero, removeall"
+    echo "Available modes: build_up, down-v, fromzero, restart, stop"
     echo "For more information, use: $0 -h"
     exit 1
     ;;
@@ -104,12 +120,12 @@ esac
 
 # Build services
 echo "Building images..."
-#docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml build
-docker-compose build
+#docker compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml build
+docker compose build
 
 # Lift services
 echo "Lifting services..."
-#docker-compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml up -d
-docker-compose up -d
+#docker compose --project-name "$INSTANCE_NAME" --env-file "$ENV_FILE" -f docker-compose.yml up -d
+docker compose up -d
 
 echo "Process completed for instance '$INSTANCE_NAME'!"

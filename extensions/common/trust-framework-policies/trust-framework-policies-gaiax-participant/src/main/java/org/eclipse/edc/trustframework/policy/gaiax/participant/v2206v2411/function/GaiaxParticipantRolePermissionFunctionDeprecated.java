@@ -4,6 +4,7 @@ import org.eclipse.edc.iam.verifiablecredentials.spi.model.VerifiableCredential;
 import org.eclipse.edc.participant.spi.ParticipantAgent;
 import org.eclipse.edc.participant.spi.ParticipantAgentPolicyContext;
 import org.eclipse.edc.policy.engine.spi.AtomicConstraintRuleFunction;
+import org.eclipse.edc.policy.model.Duty;
 import org.eclipse.edc.policy.model.Operator;
 import org.eclipse.edc.policy.model.Permission;
 import org.eclipse.edc.spi.monitor.Monitor;
@@ -14,24 +15,34 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class GaiaxParticipantRolePermissionFunction<C extends ParticipantAgentPolicyContext> 
+//DEPRETATED: Evaluation is made by GaiaxParticipantClaimsEvaluationFunction
+public class GaiaxParticipantRolePermissionFunctionDeprecated<C extends ParticipantAgentPolicyContext> 
         implements AtomicConstraintRuleFunction<Permission, C> {
-
+    
+    public boolean evaluate(Operator operator, Object rightOperand, Permission permission, C policyContext) { return true; }
+/*
+    private static final String GAIAX_2206_CONTEXT = "https://registry.gaia-x.eu/v2206/api/shape";
+    private static final String GAIAX_2411_CONTEXT = "https://registry.lab.gaia-x.eu/main/context/2411";
     private static final String GAIAX_LEGAL_PERSON_TYPE = "LegalPerson";
     private static final String PARTICIPANT_ROLE_CLAIM = "gx:participantRole";
-    private static final Set<String> SUPPORTED_CONTEXTS = Set.of(
-        "https://registry.gaia-x.eu/v2206/api/shape",
-        "https://registry.lab.gaia-x.eu/main/context/2411"
-    );
 
     private final Monitor monitor;
+    private final Set<String> supportedContexts;
 
-    private GaiaxParticipantRolePermissionFunction(Monitor monitor) {
+    private GaiaxParticipantRolePermissionFunction(Monitor monitor, String mockRegistryUrl) {
         this.monitor = monitor;
+        
+        // Construir el Set con los contextos soportados, incluyendo el mock si está presente
+        if (mockRegistryUrl != null && !mockRegistryUrl.isEmpty()) {
+            this.supportedContexts = Set.of(GAIAX_2206_CONTEXT, GAIAX_2411_CONTEXT, mockRegistryUrl);
+        } else {
+            this.supportedContexts = Set.of(GAIAX_2206_CONTEXT, GAIAX_2411_CONTEXT);
+        }
     }
 
-    public static <C extends ParticipantAgentPolicyContext> GaiaxParticipantRolePermissionFunction<C> create(Monitor monitor) {
-        return new GaiaxParticipantRolePermissionFunction<>(monitor);
+    public static <C extends ParticipantAgentPolicyContext> GaiaxParticipantRolePermissionFunction<C> create(
+            Monitor monitor, String mockRegistryUrl) {
+        return new GaiaxParticipantRolePermissionFunction<>(monitor, mockRegistryUrl);
     }
 
     @Override
@@ -99,7 +110,7 @@ public class GaiaxParticipantRolePermissionFunction<C extends ParticipantAgentPo
     private boolean isGaiaxLegalPersonCredential(VerifiableCredential credential) {
         boolean hasCorrectSchema = credential.getCredentialSchema() != null &&
                 credential.getCredentialSchema().stream()
-                        .anyMatch(schema -> SUPPORTED_CONTEXTS.contains(schema.id()));
+                        .anyMatch(schema -> supportedContexts.contains(schema.id()));
         
         boolean hasCorrectType = credential.getType().contains(GAIAX_LEGAL_PERSON_TYPE);
         
@@ -122,4 +133,5 @@ public class GaiaxParticipantRolePermissionFunction<C extends ParticipantAgentPo
         
         return Stream.empty();
     }
+*/
 }

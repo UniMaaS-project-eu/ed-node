@@ -1,0 +1,33 @@
+{
+    "@context": {
+        "gx-participant": "https://registry.gaia-x.eu/v2206/api/shape#",
+        "legalName": "gx-participant:legalName",
+        "legalAddress": {
+            "@id": "gx-participant:legalAddress",
+            "@type": "@id"
+        },
+        "addressCountryCode": "gx-participant:addressCountryCode",
+        "addressCode": "gx-participant:addressCode",
+        "streetAddress": "gx-participant:streetAddress",
+        "postalCode": "gx-participant:postalCode",
+        "registrationNumber": {
+            "@id": "gx-participant:registrationNumber",
+            "@type": "@id"
+        },
+        "registrationNumberType": "gx-participant:registrationNumberType",
+        "registrationNumberNumber": "gx-participant:registrationNumberNumber",
+        "proof": {
+            "@id": "https://w3id.org/security#proof",
+            "@type": "@id"
+        },
+        "proofValue": "https://w3id.org/security#proofValue",
+        "proofPurpose": {
+            "@id": "https://w3id.org/security#proofPurpose",
+            "@type": "@id"
+        },
+        "verificationMethod": {
+            "@id": "https://w3id.org/security#verificationMethod",
+            "@type": "@id"
+        }
+    }
+}
