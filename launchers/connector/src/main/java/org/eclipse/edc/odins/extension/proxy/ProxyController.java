@@ -438,8 +438,6 @@ public class ProxyController {
             return Response.status(FORBIDDEN).build();
         }
 
-        //PDTE_JUAN: Perform XACML token validation (define the function)
-
         if (this.xacmlValidation) {
             String tokenXacml = requestContext.getHeaders()
                 .entrySet()
