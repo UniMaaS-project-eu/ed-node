@@ -120,7 +120,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
     // Periodic Renewal
     @Setting(key = "unimaas.credentials.renewal.check.interval.minutes", 
              description = "Interval in minutes to check credentials for renewal", 
-             defaultValue = "1400")
+             defaultValue = "1440")
     private String renewalCheckIntervalMinutes;
 
     @Setting(key = "unimaas.credentials.renewal.expiry.threshold.days", 
@@ -230,15 +230,15 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
             LocalDateTime thresholdDate = now.plusDays(thresholdDays);
 
-            // Verificar MembershipCredential
+            // Verify MembershipCredential
             checkAndRenewCredential("MembershipCredential", thresholdDate, this::renewMembershipCredential);
 
-            // Verificar DataProcessorCredential (requiere JWT de Keycloak)
+            // Verify DataProcessorCredential (requires Keycloak JWT)
             String accessToken = obtainJWTKeyCloak();
             checkAndRenewCredential("DataProcessorCredential", thresholdDate, 
                     () -> renewDataProcessorCredential(accessToken));
 
-            // Verificar GAIA-X Credential
+            // Verify GAIA-X Credential
             checkAndRenewCredential("LegalPerson", thresholdDate, 
                     () -> renewGAIAXCredential(accessToken));
 
@@ -254,7 +254,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         try {
             monitor.info("Checking %s...".formatted(credentialType));
             
-            // Buscar credencial existente en el store
+            // Search if credential is stored
             List<VerifiableCredentialResource> credentials = findCredentialsByType(credentialType);
 
             if (credentials.isEmpty()) {
@@ -263,7 +263,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
                 return;
             }
 
-            // Verificar la fecha de expiración de cada credencial encontrada
+            // Verify expiration date of each VC
             boolean needsRenewal = false;
             for (VerifiableCredentialResource credential : credentials) {
                 LocalDateTime expirationDate = extractExpirationDate(credential);
@@ -328,7 +328,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
                 return null;
             }
 
-            // Convertir Instant a LocalDateTime en UTC
+            // Convert Instant to LocalDateTime (UTC)
             return LocalDateTime.ofInstant(expirationInstant, ZoneOffset.UTC);
 
         } catch (Exception e) {
@@ -356,9 +356,6 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
     private interface RenewalAction {
         void execute() throws IOException, InterruptedException;
     }
-
-
-
 
     private void storeDefaultScopeCredential() throws IOException, InterruptedException {
         monitor.info("========================================");
@@ -398,7 +395,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         String keycloakTokenEndpoint = "%s://%s:%s%s".formatted(
                 oidcProtocol, oidcHost, oidcPort, oidcPath);
 
-        monitor.debug("Keycloak token endpoint: %s".formatted(keycloakTokenEndpoint));
+        monitor.info("Keycloak token endpoint: %s".formatted(keycloakTokenEndpoint));
 
         // Create the request body with the required parameters
         String requestBody = String.format("grant_type=client_credentials&client_id=%s&client_secret=%s",
@@ -418,7 +415,7 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
         // Make the request
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        monitor.debug("Keycloak response status: %d".formatted(response.statusCode()));
+        monitor.info("Keycloak response status: %d".formatted(response.statusCode()));
         //monitor.debug("Keycloak response body: %s".formatted(response.body()));
 
         if (response.statusCode() == 200) {
@@ -589,7 +586,6 @@ public class IdentityHubExtensionOdinS implements ServiceExtension {
             monitor.severe("Error decoding JWT: %s".formatted(e.getMessage()), e);
         }
     }
-
 
     /**
      * Recursively traverses the payload looking for "roles" arrays and accumulating unique values.

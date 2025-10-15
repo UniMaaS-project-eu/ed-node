@@ -35,22 +35,22 @@ class DataAccessCredentialScopeExtractor implements ScopeExtractor {
     @Override
     public Set<String> extractScopes(Object leftValue, Operator operator, Object rightValue, RequestPolicyContext context) {
         
-        System.out.println("DEBUG: ScopeExtractor - leftValue: " + leftValue);
+        //monitor.debug("DEBUG: ScopeExtractor - leftValue: " + leftValue);
         
         // Provider connector evaluates its policies and include scopes required to Consumer connector.
         // In this case, if leftOperand starts with "DataAccess." includes "DataProcessorCredential".
         if (leftValue instanceof String leftOperand) {
             if (leftOperand.startsWith(DATA_ACCESS_CONSTRAINT_PREFIX)) {
-                System.out.println("DEBUG: ScopeExtractor - Found DataAccess constraint, requesting DataProcessor credential");
+                //monitor.debug("DEBUG: ScopeExtractor - Found DataAccess constraint, requesting DataProcessor credential");
                 
                 String dataProcessorScope = "%s:%s:read".formatted(CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
-                System.out.println("DEBUG: ScopeExtractor - Generated scope: " + dataProcessorScope);
+                //monitor.debug("DEBUG: ScopeExtractor - Generated scope: " + dataProcessorScope);
                 
                 return Set.of(dataProcessorScope);
             }
         }
         
-        System.out.println("DEBUG: ScopeExtractor - No DataAccess constraint found, returning empty");
+        //monitor.debug("DEBUG: ScopeExtractor - No DataAccess constraint found, returning empty");
         return Set.of();
     }
 }

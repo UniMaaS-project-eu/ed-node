@@ -37,20 +37,20 @@ public class GaiaxCredentialScopeExtractor implements ScopeExtractor {
     @Override
     public Set<String> extractScopes(Object leftValue, Operator operator, Object rightValue, RequestPolicyContext context) {
         
-        monitor.debug("GaiaxScopeExtractor - leftValue: " + leftValue);
+        //monitor.debug("GaiaxScopeExtractor - leftValue: " + leftValue);
         
         if (leftValue instanceof String leftOperand) {
             if (leftOperand.startsWith(GAIAX_CONSTRAINT_PREFIX1) || leftOperand.startsWith(GAIAX_CONSTRAINT_PREFIX2)) {
-                monitor.debug("GaiaxScopeExtractor - Found GAIA-X constraint, requesting LegalPerson credential");
+                //monitor.debug("GaiaxScopeExtractor - Found GAIA-X constraint, requesting LegalPerson credential");
                 
                 String gaiaxScope = "%s:%s:read".formatted(CREDENTIAL_TYPE_NAMESPACE, LEGAL_PERSON_CREDENTIAL_TYPE);
-                monitor.debug("GaiaxScopeExtractor - Generated scope: " + gaiaxScope);
+                //monitor.debug("GaiaxScopeExtractor - Generated scope: " + gaiaxScope);
                 
                 return Set.of(gaiaxScope);
             }
         }
         
-        monitor.debug("GaiaxScopeExtractor - No GAIA-X constraint found, returning empty");
+        //monitor.debug("GaiaxScopeExtractor - No GAIA-X constraint found, returning empty");
         return Set.of();
     }
 }

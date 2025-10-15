@@ -145,8 +145,8 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
 
     @Override
     public Boolean apply(Policy policy, RequestPolicyContext requestPolicyContext) {
-        System.out.println("DEBUG: ===== DefaultScopeMappingFunction STARTED =====");
-        System.out.println("DEBUG: Context type: " + requestPolicyContext.getClass().getSimpleName());
+        //System.out.println("DEBUG: ===== DefaultScopeMappingFunction STARTED =====");
+        //System.out.println("DEBUG: Context type: " + requestPolicyContext.getClass().getSimpleName());
 
         var requestScopeBuilder = requestPolicyContext.requestScopeBuilder();
         var currentScopes = requestScopeBuilder.build().getScopes();
@@ -162,7 +162,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
             // For catalog requests, add DataProcessorCredential preemptively
             String dataProcessorScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
             newScopes.add(dataProcessorScope);
-            System.out.println("DEBUG: Added DataProcessorCredential scope for catalog request");
+            //System.out.println("DEBUG: Added DataProcessorCredential scope for catalog request");
             
             // You can also add other common scopes that might be needed to view assets. This can be configured to suit your needs.
             addCommonCatalogScopes(newScopes);
@@ -180,12 +180,12 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
         requestScopeBuilder.scopes(newScopes);
 
         // DEBUG
-        System.out.println("DEBUG: === SCOPE MAPPING FUNCTION ===");
-        System.out.println("DEBUG: Default scopes: " + defaultScopes);
-        System.out.println("DEBUG: Existing scopes (from ScopeExtractor): " + currentScopes);
-        System.out.println("DEBUG: Policy constraint scopes: " + policyScopesFromConstraints);
-        System.out.println("DEBUG: JWT extra scopes: " + tokenJWTScopes);
-        System.out.println("DEBUG: Final combined scopes: " + newScopes);
+        //System.out.println("DEBUG: === SCOPE MAPPING FUNCTION ===");
+        //System.out.println("DEBUG: Default scopes: " + defaultScopes);
+        //System.out.println("DEBUG: Existing scopes (from ScopeExtractor): " + currentScopes);
+        //System.out.println("DEBUG: Policy constraint scopes: " + policyScopesFromConstraints);
+        //System.out.println("DEBUG: JWT extra scopes: " + tokenJWTScopes);
+        //System.out.println("DEBUG: Final combined scopes: " + newScopes);
 
         return true;
     }
@@ -196,55 +196,55 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     private Set<String> extractScopesFromPolicyConstraints(Policy policy) {
         Set<String> scopesFromConstraints = new HashSet<>();
 
-        System.out.println("DEBUG: === POLICY ANALYSIS START ===");
+        //System.out.println("DEBUG: === POLICY ANALYSIS START ===");
         
-        System.out.println("DEBUG: Analyzing policy constraints for DataAccess patterns...");
-        System.out.println("DEBUG: Policy type: " + (policy != null ? policy.getClass().getSimpleName() : "null"));
+        //System.out.println("DEBUG: Analyzing policy constraints for DataAccess patterns...");
+        //System.out.println("DEBUG: Policy type: " + (policy != null ? policy.getClass().getSimpleName() : "null"));
         
         if (policy == null) {
-            System.out.println("DEBUG: Policy is null, cannot analyze constraints");
+            //System.out.println("DEBUG: Policy is null, cannot analyze constraints");
             return scopesFromConstraints;
         }
         
         try {
-            System.out.println("DEBUG: Policy toString: " + policy.toString());
+            //System.out.println("DEBUG: Policy toString: " + policy.toString());
             
             // Analyze policy permissions
             var permissions = policy.getPermissions();
-            System.out.println("DEBUG: Policy permissions: " + (permissions != null ? permissions.size() : "null"));
+            //System.out.println("DEBUG: Policy permissions: " + (permissions != null ? permissions.size() : "null"));
             
             if (permissions != null && !permissions.isEmpty()) {
                 for (int i = 0; i < permissions.size(); i++) {
                     Permission permission = permissions.get(i);
-                    System.out.println("DEBUG: Permissions count: " + (permissions != null ? permissions.size() : "null"));
-                    System.out.println("DEBUG: Permission " + i + ": " + permission);
+                    //System.out.println("DEBUG: Permissions count: " + (permissions != null ? permissions.size() : "null"));
+                    //System.out.println("DEBUG: Permission " + i + ": " + permission);
                     
                     var constraints = permission.getConstraints();                    
-                    System.out.println("DEBUG: Permission " + i + " constraints count: " + (constraints != null ? constraints.size() : "null"));
+                    //System.out.println("DEBUG: Permission " + i + " constraints count: " + (constraints != null ? constraints.size() : "null"));
                     
                     if (constraints != null) {
                         for (int j = 0; j < constraints.size(); j++) {
                             Constraint constraint = constraints.get(j);
-                            System.out.println("DEBUG: Processing constraint " + j + ": " + constraint);
+                            //System.out.println("DEBUG: Processing constraint " + j + ": " + constraint);
                             
                             // Use reflection to get leftOperand as methods may vary
                             String leftOperand = getConstraintLeftOperandSafely(constraint);
-                            System.out.println("DEBUG: Extracted leftOperand: " + leftOperand);
+                            //System.out.println("DEBUG: Extracted leftOperand: " + leftOperand);
 
 
                             if (leftOperand != null) {
-                                System.out.println("DEBUG: Found constraint leftOperand: " + leftOperand);
+                                //System.out.println("DEBUG: Found constraint leftOperand: " + leftOperand);
                                 
                                 // If the constraint starts with "DataAccess.", we need DataProcessorCredential
                                 if (leftOperand.startsWith(DATA_ACCESS_CONSTRAINT_PREFIX)) {
                                     String dataProcessorScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
                                     scopesFromConstraints.add(dataProcessorScope);
-                                    System.out.println("DEBUG: ✅ ADDED DataProcessor scope for constraint: " + leftOperand);
+                                    //System.out.println("DEBUG: ✅ ADDED DataProcessor scope for constraint: " + leftOperand);
                                 } else {
-                                    System.out.println("DEBUG: ❌ Constraint does not match DataAccess pattern: " + leftOperand);
+                                    //System.out.println("DEBUG: ❌ Constraint does not match DataAccess pattern: " + leftOperand);
                                 }
                             } else {
-                                System.out.println("DEBUG: Could not extract leftOperand from constraint: " + constraint);
+                                //System.out.println("DEBUG: Could not extract leftOperand from constraint: " + constraint);
                                 
                             }
                         }
@@ -254,22 +254,22 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
             
             // Also analyze duties, if any. Use reflection to safely obtain duties.
             var duties = getPolicyDutiesSafely(policy);
-            System.out.println("DEBUG: Policy duties: " + (duties != null ? duties.size() : "null"));
+            //System.out.println("DEBUG: Policy duties: " + (duties != null ? duties.size() : "null"));
             
             if (duties != null) {
                 duties.forEach(duty -> {
-                    System.out.println("DEBUG: Processing duty: " + duty);
+                    //System.out.println("DEBUG: Processing duty: " + duty);
                     var dutyConstraints = getDutyConstraintsSafely(duty);
                     if (dutyConstraints != null) {
                         dutyConstraints.forEach(constraint -> {
                             String leftOperand = getConstraintLeftOperandSafely(constraint);
                             if (leftOperand != null) {
-                                System.out.println("DEBUG: Found duty constraint leftOperand: " + leftOperand);
+                                //System.out.println("DEBUG: Found duty constraint leftOperand: " + leftOperand);
                                 
                                 if (leftOperand.startsWith(DATA_ACCESS_CONSTRAINT_PREFIX)) {
                                     String dataProcessorScope = String.format("%s:%s:read", CREDENTIAL_TYPE_NAMESPACE, DATA_PROCESSOR_CREDENTIAL_TYPE);
                                     scopesFromConstraints.add(dataProcessorScope);
-                                    System.out.println("DEBUG: Added DataProcessor scope due to duty constraint: " + leftOperand);
+                                    //System.out.println("DEBUG: Added DataProcessor scope due to duty constraint: " + leftOperand);
                                 }
                             }
                         });
@@ -294,7 +294,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
             e.printStackTrace();
         }
         
-        System.out.println("DEBUG: Total scopes from policy constraints: " + scopesFromConstraints);
+        //System.out.println("DEBUG: Total scopes from policy constraints: " + scopesFromConstraints);
         return scopesFromConstraints;
     }
     
@@ -304,15 +304,15 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
     private String getConstraintLeftOperandSafely(Constraint constraint) {
         try {
 
-            System.out.println("DEBUG: Constraint class: " + constraint.getClass().getName());
-            System.out.println("DEBUG: Constraint toString: " + constraint.toString());
+            //System.out.println("DEBUG: Constraint class: " + constraint.getClass().getName());
+            //System.out.println("DEBUG: Constraint toString: " + constraint.toString());
 
             // List all available methods
             java.lang.reflect.Method[] methods = constraint.getClass().getMethods();
             for (java.lang.reflect.Method method : methods) {
                 if (method.getName().contains("left") || method.getName().contains("Left") || 
                     method.getName().contains("operand") || method.getName().contains("Operand")) {
-                    System.out.println("DEBUG: Available method: " + method.getName());
+                    //System.out.println("DEBUG: Available method: " + method.getName());
                 }
             }
 
@@ -395,32 +395,32 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
      * Extraxt token scopes
      */
     private Set<String> extractScopesFromTokenJWT(RequestPolicyContext context) {
-        System.out.println("DEBUG: Extracting scopes from JWT token...");
+        //System.out.println("DEBUG: Extracting scopes from JWT token...");
         
         try {
                         
             // Strategy 1: Search the context's ClaimToken
             Set<String> scopesFromClaimToken = extractScopesFromClaimToken(context);
             if (!scopesFromClaimToken.isEmpty()) {
-                System.out.println("DEBUG: Found scopes in ClaimToken: " + scopesFromClaimToken);
+                //System.out.println("DEBUG: Found scopes in ClaimToken: " + scopesFromClaimToken);
                 return scopesFromClaimToken;
             }
 
             // Strategy 2: Try to access the participantAgent via reflection
             Set<String> scopesFromParticipantAgent = extractScopesFromParticipantAgentSafe(context);
             if (!scopesFromParticipantAgent.isEmpty()) {
-                System.out.println("DEBUG: Found scopes in participantAgent: " + scopesFromParticipantAgent);
+                //System.out.println("DEBUG: Found scopes in participantAgent: " + scopesFromParticipantAgent);
                 return scopesFromParticipantAgent;
             }
 
             // Strategy 3: Search for properties of the context that may be exposed
             Set<String> scopesFromContextProperties = extractScopesFromContextProperties(context);
             if (!scopesFromContextProperties.isEmpty()) {
-                System.out.println("DEBUG: Found scopes in context properties: " + scopesFromContextProperties);
+                //System.out.println("DEBUG: Found scopes in context properties: " + scopesFromContextProperties);
                 return scopesFromContextProperties;
             }
 
-            System.out.println("DEBUG: No extra scopes found from JWT Token");
+            //System.out.println("DEBUG: No extra scopes found from JWT Token");
             return Set.of();
             
         } catch (Exception e) {
@@ -560,7 +560,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
      */
     private Set<String> extractScopesFromParticipantAgentObject(Object participantAgent) {
         try {
-            System.out.println("DEBUG: Found participantAgent of type: " + participantAgent.getClass().getSimpleName());
+            //System.out.println("DEBUG: Found participantAgent of type: " + participantAgent.getClass().getSimpleName());
 
             // If a ClaimToken
             if (participantAgent instanceof ClaimToken) {
@@ -620,7 +620,7 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
      */
     private Set<String> extractScopesFromContextProperties(RequestPolicyContext context) {
         try {
-            System.out.println("DEBUG: Attempting to find context properties...");
+            //System.out.println("DEBUG: Attempting to find context properties...");
             
             // Find methods that can expose context data
             java.lang.reflect.Method[] methods = context.getClass().getMethods();
@@ -639,14 +639,14 @@ public class DefaultScopeMappingFunction implements PolicyValidatorRule<RequestP
                             
                             Set<String> scopes = extractScopesFromMap(map);
                             if (!scopes.isEmpty()) {
-                                System.out.println("DEBUG: Found scopes in " + methodName + ": " + scopes);
+                                //System.out.println("DEBUG: Found scopes in " + methodName + ": " + scopes);
                                 return scopes;
                             }
                         }
                         
                         // If the result contains scope information
                         if (result != null && result.toString().contains("scope")) {
-                            System.out.println("DEBUG: Found potential scope info in " + methodName + ": " + result);
+                            //System.out.println("DEBUG: Found potential scope info in " + methodName + ": " + result);
                         }
                         
                     } catch (Exception ignored) {

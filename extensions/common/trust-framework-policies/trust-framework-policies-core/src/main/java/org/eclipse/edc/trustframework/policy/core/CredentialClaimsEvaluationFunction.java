@@ -56,7 +56,7 @@ public abstract class CredentialClaimsEvaluationFunction<CLAIMS_SHAPE> implement
 
     @Override
     public boolean evaluate(Operator operator, Object rightValue, Permission rule, PolicyContext context) {
-        monitor.debug("Evaluating GAIA-X policy constraint");
+        //monitor.debug("Evaluating GAIA-X policy constraint");
         try {
             var left = leftOperand(context);
             var right = rightOperand(rightValue);
@@ -74,7 +74,7 @@ public abstract class CredentialClaimsEvaluationFunction<CLAIMS_SHAPE> implement
     }
 
     private Set<Object> leftOperand(PolicyContext context) {
-        monitor.debug("Extracting credentials from PolicyContext");
+        //monitor.debug("Extracting credentials from PolicyContext");
 
         ParticipantAgent participantAgent = null;
         try {
@@ -100,16 +100,16 @@ public abstract class CredentialClaimsEvaluationFunction<CLAIMS_SHAPE> implement
             return Collections.emptySet();
         }
 
-        monitor.debug("Found " + claims.size() + " claims in ParticipantAgent");
+        //monitor.debug("Found " + claims.size() + " claims in ParticipantAgent");
 
         return claims.values().stream()
             .flatMap(this::toCredentialStream)
             .filter(Objects::nonNull)
             .filter(credentialFilter())
             .peek(cred -> {
-                monitor.debug("Processing GAIA-X credential: " + cred.getType());
-                monitor.debug("CredentialSchema count: " +
-                        (cred.getCredentialSchema() != null ? cred.getCredentialSchema().size() : 0));
+                //monitor.debug("Processing GAIA-X credential: " + cred.getType());
+                //monitor.debug("CredentialSchema count: " +
+                //        (cred.getCredentialSchema() != null ? cred.getCredentialSchema().size() : 0));
             })
             .map(credential -> {
                 var credSubjects = credential.getCredentialSubject();
@@ -157,8 +157,8 @@ public abstract class CredentialClaimsEvaluationFunction<CLAIMS_SHAPE> implement
             return Stream.empty();
         }
 
-        monitor.debug("Processing claim object: " + claim.getClass().getName());
-        monitor.debug("Claim content: " + claim.toString());
+        //monitor.debug("Processing claim object: " + claim.getClass().getName());
+        //monitor.debug("Claim content: " + claim.toString());
 
         if (claim instanceof VerifiableCredential vc) {
             monitor.debug("Single VC detected - Type: " + vc.getType() + ", ID: " + vc.getId());
@@ -169,7 +169,7 @@ public abstract class CredentialClaimsEvaluationFunction<CLAIMS_SHAPE> implement
                     .filter(Objects::nonNull)
                     .flatMap(c -> {
                         if (c instanceof VerifiableCredential v) {
-                            monitor.debug("List VC detected - Type: " + v.getType() + ", ID: " + v.getId());
+                            //monitor.debug("List VC detected - Type: " + v.getType() + ", ID: " + v.getId());
                             return Stream.of(v);
                         } else {
                             monitor.warning("Unexpected element in list: " + c.getClass());

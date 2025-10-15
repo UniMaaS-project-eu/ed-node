@@ -405,6 +405,11 @@ services:
       ########################### Vault Link ###########################
       - EDC_VAULT_HASHICORP_URL=http://edc-vault-${ED_NODE_INSTANCE_NAME}:8200
 
+      # ########################### XACML integration ###########################
+      - XACML_VALIDATION_ENABLED=${XACML_VALIDATION_ENABLED}
+      - XACML_PDP_ENDPOINT=${XACML_PDP_ENDPOINT}
+      - XACML_DOMAIN=${XACML_DOMAIN}
+
       # Since there is a dynamic token acquisition approach that stores the token value in edc.vault.hashicorp.token (see entrypoint) it no longer makes sense to define the parameter
       # EDC_VAULT_HASHICORP_TOKEN_FILE which is to indicate the file where said value is statically.
       # If this were to be touched it would be necessary:

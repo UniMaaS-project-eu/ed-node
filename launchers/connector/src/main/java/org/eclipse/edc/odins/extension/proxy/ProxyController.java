@@ -31,6 +31,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.edc.connector.dataplane.spi.iam.DataPlaneAuthorizationService;
+//import org.eclipse.edc.identityhub.spi.verifiablecredentials.model.VerifiableCredentialResource;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.system.ServiceExtensionContext;
 
@@ -47,7 +48,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 // 3. STATIC imports
@@ -91,16 +94,37 @@ public class ProxyController {
     private static final String DEFAULT_INFLUXDB_BUCKET = "test_org_bucket";
     private static final String DEFAULT_INFLUXDB_ADMIN_TOKEN = "admin_token";
     private static final String DEFAULT_INFLUXDB_PRECISION = "ns";
-    */
 
-    private final ObjectMapper objectMapper; // Campo añadido
-
-    /*
     private String influxDbOrg;
     private String influxDbBucket;
     private String influxDbAdminToken;
     private String influxDbPrecision;
     */
+
+
+    private static final String ENV_EDC_PARTICIPANT_ID = "EDC_PARTICIPANT_ID";
+    private static final String EDC_PARTICIPANT_ID = "edc.participant.id";
+    private static final String DEFAULT_EDC_PARTICIPANT_ID = "did:web:localhost%3A7083";
+    private String participantID;
+
+    private static final String ENV_XACML_VALIDATION_ENABLED = "XACML_VALIDATION_ENABLED";
+    private static final String XACML_VALIDATION_ENABLED = "xacml.validation.enabled";
+    private static final boolean DEFAULT_XACML_VALIDATION_ENABLED = false;
+    private boolean xacmlValidation;
+
+    private static final String ENV_XACML_PDP_ENDPOINT = "XACML_PDP_ENDPOINT";
+    private static final String XACML_PDP_ENDPOINT = "xacml.pdp.endpoint";
+    private static final String DEFAULT_XACML_PDP_ENDPOINT = "http://localhost:9092/pdp/verdict";
+    private String xacmlPDPEndpoint;
+
+
+    private static final String ENV_XACML_DOMAIN = "XACML_DOMAIN";
+    private static final String XACML_DOMAIN = "xacml.domain";
+    private static final String DEFAULT_XACML_DOMAIN = "test";
+    private String xacmlDomain;
+
+    private final ObjectMapper objectMapper; // Campo añadido
+
 
     private ServiceExtensionContext context;
 
@@ -121,6 +145,13 @@ public class ProxyController {
         this.influxDbAdminToken = getConfigValue(context, ENV_INFLUXDB_ADMIN_TOKEN, INFLUXDB_ADMIN_TOKEN, DEFAULT_INFLUXDB_ADMIN_TOKEN);
         this.influxDbPrecision = getConfigValue(context, ENV_INFLUXDB_PRECISION, INFLUXDB_PRECISION, DEFAULT_INFLUXDB_PRECISION);
         */
+
+        this.participantID = getConfigValue(context, ENV_EDC_PARTICIPANT_ID, EDC_PARTICIPANT_ID, DEFAULT_EDC_PARTICIPANT_ID);
+
+        this.xacmlValidation = getBooleanConfigValue(context, ENV_XACML_VALIDATION_ENABLED, XACML_VALIDATION_ENABLED, DEFAULT_XACML_VALIDATION_ENABLED);
+        this.xacmlPDPEndpoint = getConfigValue(context, ENV_XACML_PDP_ENDPOINT, XACML_PDP_ENDPOINT, DEFAULT_XACML_PDP_ENDPOINT);
+        this.xacmlDomain = getConfigValue(context, ENV_XACML_DOMAIN, XACML_DOMAIN, DEFAULT_XACML_DOMAIN);
+
         this.objectMapper = new ObjectMapper(); 
     }
 
@@ -136,6 +167,15 @@ public class ProxyController {
         }
         return context.getConfig().getString(configKey, defaultValue);
     }
+
+    private boolean getBooleanConfigValue(ServiceExtensionContext context, String envKey, String configKey, boolean defaultValue) {
+        String envValue = System.getenv(envKey);
+        if (envValue != null && !envValue.isEmpty()) {
+            return Boolean.parseBoolean(envValue);
+        }
+        return context.getConfig().getBoolean(configKey, defaultValue);
+    }
+
 
     // Token debugging method - add to ProxyController
     private void debugToken(String token, Monitor monitor) {
@@ -192,6 +232,167 @@ public class ProxyController {
         }
     }
 
+    private Set<String> extractRolesRecursive(JsonNode node) {
+        Set<String> roles = new java.util.HashSet<>();
+
+        if (node.isObject()) {
+            node.fields().forEachRemaining(entry -> {
+                if ("roles".equals(entry.getKey()) && entry.getValue().isArray()) {
+                    entry.getValue().forEach(roleNode -> roles.add(roleNode.asText()));
+                } else {
+                    roles.addAll(extractRolesRecursive(entry.getValue()));
+                }
+            });
+        } else if (node.isArray()) {
+            node.forEach(element -> roles.addAll(extractRolesRecursive(element)));
+        }
+
+        return roles;
+    }
+
+    private Set<String> obtainRoles(String jwt) {
+        try {
+            //monitor.info("Decoding JWT token...");
+
+            String[] jwtParts = jwt.split("\\.");
+            if (jwtParts.length != 3) {
+                monitor.warning("Invalid JWT format. Expected 3 parts, got %d".formatted(jwtParts.length));
+                return Collections.emptySet();
+            }
+
+            String payloadJson = new String(Base64.getUrlDecoder().decode(jwtParts[1]), StandardCharsets.UTF_8);
+            //monitor.info("JWT Payload: %s".formatted(payloadJson));
+
+            JsonNode payload = objectMapper.readTree(payloadJson);
+
+            // Extract roles recursively
+            Set<String> roles = extractRolesRecursive(payload);
+            //monitor.info("Extracted roles: %s".formatted(roles));
+
+            //monitor.info("Extracted roles: %s".formatted(roles));
+            return roles;
+
+        } catch (Exception e) {
+            monitor.severe("Error decoding JWT: %s".formatted(e.getMessage()), e);
+            return Collections.emptySet();
+        }
+    }
+
+    private String extractDecisionFromXml(String xml) {
+        try {
+            // Busca el contenido dentro de <Decision>...</Decision>
+            int start = xml.indexOf("<Decision>");
+            int end = xml.indexOf("</Decision>");
+            if (start != -1 && end != -1 && end > start) {
+                return xml.substring(start + "<Decision>".length(), end).trim();
+            }
+        } catch (Exception e) {
+            monitor.warning("Error parsing PDP XML response: " + e.getMessage());
+        }
+        return "Unknown";
+    }
+
+    private boolean sendPDPRequest(Set<String> roles, String method, ContainerRequestContext requestContext) {
+        if (roles == null || roles.isEmpty()) {
+            monitor.warning("No roles found to send to PDP");
+            return false;
+        }
+
+        try {
+
+            StringBuilder fullUrlBuilder = new StringBuilder();
+            fullUrlBuilder.append(this.participantID);
+
+            URI requestUri = requestContext.getUriInfo().getRequestUri();
+            String path = requestUri.getPath();
+            //monitor.info("path: " + path);
+            String query = requestUri.getQuery();
+            //monitor.info("query: " + query);
+
+            if (!path.startsWith("/")) {
+                fullUrlBuilder.append("/");
+            }
+            fullUrlBuilder.append(path);
+
+            if (query != null && !query.isBlank()) {
+                fullUrlBuilder.append("?").append(query);
+            }
+
+            String fullUrl = fullUrlBuilder.toString();
+            //monitor.info("Constructed full request URL: " + fullUrl);
+
+            ArrayNode bodyArray = objectMapper.createArrayNode();
+
+            for (String role : roles) {
+                String xmlBody = String.format("""
+                    <Request xmlns="urn:oasis:names:tc:xacml:2.0:context:schema:os">
+                        <Subject SubjectCategory="urn:oasis:names:tc:xacml:1.0:subject-category:access-subject">
+                            <Attribute AttributeId="urn:oasis:names:tc:xacml:2.0:subject:role"
+                                    DataType="http://www.w3.org/2001/XMLSchema#string">
+                                <AttributeValue>%s</AttributeValue>
+                            </Attribute>
+                        </Subject>
+                        <Resource>
+                            <Attribute AttributeId="urn:oasis:names:tc:xacml:1.0:resource:resource-id"
+                                    DataType="http://www.w3.org/2001/XMLSchema#string">
+                                <AttributeValue>%s</AttributeValue>
+                            </Attribute>
+                        </Resource>
+                        <Action>
+                            <Attribute AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                                    DataType="http://www.w3.org/2001/XMLSchema#string">
+                                <AttributeValue>%s</AttributeValue>
+                            </Attribute>
+                        </Action>
+                        <Environment/>
+                    </Request>
+                    """, role, fullUrl, method);
+
+                ObjectNode element = objectMapper.createObjectNode();
+                element.put("body", xmlBody.trim());
+                bodyArray.add(element);
+            }
+
+            String jsonPayload = objectMapper.writeValueAsString(bodyArray);
+            monitor.info("Sending Request to PDP...");
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(this.xacmlPDPEndpoint))
+                    .header("domain", this.xacmlDomain)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            String responseBody = response.body();
+
+            //monitor.info("PDP response status: " + response.statusCode());
+
+            if (response.statusCode() != 200) {
+                monitor.warning("PDP returned non-200 status: " + response.statusCode());
+                return false;
+            }
+
+            // Buscar el valor dentro de <Decision>...</Decision>
+            String decision = extractDecisionFromXml(responseBody);
+
+            if ("Permit".equalsIgnoreCase(decision)) {
+                monitor.info("PDP Decision: Permit ✅");
+                return true;
+            } else {
+                monitor.warning("PDP Request body: " + jsonPayload);
+                monitor.warning("PDP response body: " + responseBody);
+                monitor.warning("PDP Decision: " + decision + " ❌");
+                return false;
+            }
+
+        } catch (Exception e) {
+            monitor.severe("Error sending roles to PDP: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+
     private Response proxyRequest(ContainerRequestContext requestContext) {
 
         //monitor.info(this.influxDbEndpoint);
@@ -209,14 +410,7 @@ public class ProxyController {
 
         // for debuging
         //debugToken(token, monitor);
-
-        var tokenXacml = requestContext.getHeaderString("X-SUBJECT-TOKEN");
-        if (tokenXacml == null) {
-            monitor.warning("XACML Token NOT included");
-            //return Response.status(UNAUTHORIZED).build();
-            //} else {
-            //    monitor.info("XACML Token included");
-        }
+       
 
         //Standard authorization
         var authorization = authorizationService.authorize(token, emptyMap());
@@ -227,7 +421,6 @@ public class ProxyController {
         contextProperties.put(EDC_NAMESPACE + "httpMethod", requestContext.getMethod());
         var authorization = authorizationService.authorize(token, contextProperties);
         */
-
         
         if (authorization.failed()) {
             monitor.severe("Standard Authorization failed for token: " + token);
@@ -246,21 +439,40 @@ public class ProxyController {
         }
 
         //PDTE_JUAN: Perform XACML token validation (define the function)
-        var authorizationXacml = true;
-        if (!authorizationXacml) {
-            return Response.status(FORBIDDEN).build();
+
+        if (this.xacmlValidation) {
+            String tokenXacml = requestContext.getHeaders()
+                .entrySet()
+                .stream()
+                .filter(e -> e.getKey().equalsIgnoreCase("X-SUBJECT-TOKEN"))
+                .findFirst()
+                .map(e -> e.getValue().get(0))
+                .orElse(null);
+                
+            if (tokenXacml == null) {
+                monitor.warning("XACML Token NOT included");
+                return Response.status(UNAUTHORIZED).build();
+            } else {
+                //monitor.info("XACML Token included: " + tokenXacml);
+                Set<String> roles = obtainRoles(tokenXacml);
+                boolean allowed = sendPDPRequest(roles, requestContext.getMethod(), requestContext);
+                if (!allowed) {
+                    monitor.severe("PDP Decision: Access denied by policy");
+                    return Response.status(UNAUTHORIZED).build();
+                }
+            }
         }
 
         var sourceDataAddress = authorization.getContent();
 
-        monitor.info("=== sourceDataAddress properties ===");
+        //monitor.info("=== sourceDataAddress properties ===");
         Boolean isInfluxDb = false;
         String paramsReq = "";
         String allowedMethods = "";
         String tokenInfluxDb = "";
         String bucketInfluxDb = "";
         for (var entry : sourceDataAddress.getProperties().entrySet()) {
-            monitor.info("Clave: " + entry.getKey() + " -> Valor: " + entry.getValue());
+            //monitor.info("Clave: " + entry.getKey() + " -> Valor: " + entry.getValue());
             if ("https://w3id.org/edc/v0.0.1/ns/influxdb.isInfluxDb".equalsIgnoreCase(entry.getKey())) {
                 if (Boolean.parseBoolean((String) entry.getValue())) {
                     isInfluxDb = true;
@@ -277,7 +489,7 @@ public class ProxyController {
 
 
         }
-        monitor.info("=== END PROPERTIES ===");
+        //monitor.info("=== END PROPERTIES ===");
 
         // Validation of allowed methods
         if (!allowedMethods.isEmpty()) {
@@ -309,13 +521,13 @@ public class ProxyController {
             // - Option 2: This option DOES consider the request parameters when redirecting to the data source API.
             var targetUrlBuilder = new StringBuilder(sourceDataAddress.getStringProperty(EDC_NAMESPACE + "baseUrl"));
             // Add this line to log the value of targetUrl
-            monitor.info("1 - Proxy target URL: " + targetUrlBuilder);
+            //monitor.info("1 - Proxy target URL: " + targetUrlBuilder);
             var endpointUrl = requestContext.getUriInfo().getPath();
-            monitor.info("2 - Endpoint: " + endpointUrl);
+            //monitor.info("2 - Endpoint: " + endpointUrl);
             targetUrlBuilder.append("/").append(requestContext.getUriInfo().getPath());
-            monitor.info("3 - Proxy target URL: " + targetUrlBuilder);
+            //monitor.info("3 - Proxy target URL: " + targetUrlBuilder);
 
-            // Obtener y añadir los parámetros de la consulta
+            // Adding request parameters
             var queryParameters = requestContext.getUriInfo().getQueryParameters();
             boolean firstParamAdded = false;
 
@@ -359,7 +571,8 @@ public class ProxyController {
             }
 
             var targetUrl = targetUrlBuilder.toString();
-            monitor.info("4 - Final target URL: " + targetUrl);
+            //monitor.info("4 - Final target URL: " + targetUrl);
+            monitor.info("Final target URL: " + targetUrl);
 
             // STEP 2. Prepare the request to be made (headers, params, body...)
             // - Option 1: This option does not consider the request headers when redirecting to the data source API.
