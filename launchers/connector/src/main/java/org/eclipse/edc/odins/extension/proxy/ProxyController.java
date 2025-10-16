@@ -50,6 +50,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -469,6 +471,44 @@ public class ProxyController {
         String allowedMethods = "";
         String tokenInfluxDb = "";
         String bucketInfluxDb = "";
+        String regexp = "";
+
+        /*
+        Customized parameters included in the "dataAddress" section of the asset creation request (POST /api/management/v3/assets)
+
+        -"params": Allows the addition of fixed parameters to "baseUrl". This helps to hide API data from incoming requests.
+
+            Example: "params": "?org=test_org"
+
+        - "allowedMethods": A parameter used to define which HTTP methods are permitted for the asset being accessed. This is compared against the method of the incoming request.
+                            The comma (,) is used as a separator to define multiple allowed methods.
+                            Satisfying just one method is sufficient to pass the validation.
+
+            Example: "allowedMethods": "GET,DELETE"
+
+        - "regexp": A parameter used to define regular expressions that establish an additional control check over the request path.
+                    The separator three colons (:::) is used to define more than one regular expression.
+                    Satisfying just one regular expression is sufficient to pass the validation.
+
+            Example: "regexp": "^/api/public\\?id=2.*$:::^/api/public\\?id=5.*$"
+
+        - "influxdb.isInfluxDb": Takes values "true" or "false". It is used to flag whether the asset resides on InfluxDB, enabling the dedicated friendly API functionality.
+
+            Example: "influxdb.isInfluxDb": "true"
+
+        - "influxdb.header.authorization": Used to set the value for the "authorization" header of the InfluxDB API.
+
+            Example: "influxdb.header.authorization": "Token admin_token"
+
+        - "influxdb.bucket": Used to set the value of the InfluxDB bucket.
+
+            Example: "influxdb.bucket": "test_org_bucket"
+
+        - "influxdb.apiPath": Used to set the value of the friendly path for queries directed to InfluxDB, as offered by the Proxy.
+
+            Examples: "influxdb.apiPath": "/query", "influxdb.apiPath": "/write", "influxdb.apiPath": "/health"
+        */
+
         for (var entry : sourceDataAddress.getProperties().entrySet()) {
             //monitor.info("Clave: " + entry.getKey() + " -> Valor: " + entry.getValue());
             if ("https://w3id.org/edc/v0.0.1/ns/influxdb.isInfluxDb".equalsIgnoreCase(entry.getKey())) {
@@ -483,6 +523,8 @@ public class ProxyController {
                 tokenInfluxDb = (String) entry.getValue();
             } else if ("https://w3id.org/edc/v0.0.1/ns/influxdb.bucket".equalsIgnoreCase(entry.getKey())) {
                 bucketInfluxDb = (String) entry.getValue();
+            } else if ("https://w3id.org/edc/v0.0.1/ns/regexp".equalsIgnoreCase(entry.getKey())) {
+                regexp = (String) entry.getValue();
             }
 
 
@@ -491,6 +533,7 @@ public class ProxyController {
 
         // Validation of allowed methods
         if (!allowedMethods.isEmpty()) {
+            //monitor.info("Validating AllowedMethods...");
             String currentMethod = requestContext.getMethod();
             
             // Convert the string of allowed methods to a list, removing spaces
@@ -507,6 +550,63 @@ public class ProxyController {
                         .build();
             }
             
+        }
+
+        if (regexp != null && !regexp.isBlank()) {
+            //monitor.info("Validating Regular expressions...");
+
+            StringBuilder fullUrlBuilder = new StringBuilder();
+
+            URI requestUri = requestContext.getUriInfo().getRequestUri();
+            String path = requestUri.getPath();
+            String query = requestUri.getQuery();
+
+            if (!path.startsWith("/")) {
+                fullUrlBuilder.append("/");
+            }
+            fullUrlBuilder.append(path);
+
+            if (query != null && !query.isBlank()) {
+                fullUrlBuilder.append("?").append(query);
+            }
+
+            String fullUrl = fullUrlBuilder.toString();
+            //monitor.info("Full URL to validate: " + fullUrl);
+
+            String[] regexList = regexp.split(Pattern.quote(":::"));
+
+            boolean matchFound = false;
+
+            for (String singleRegex : regexList) {
+                singleRegex = singleRegex.trim();
+
+                if (singleRegex.isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    monitor.info("Testing regex: " + singleRegex);
+
+                    if (fullUrl.matches(singleRegex)) {
+                        matchFound = true;
+                        monitor.info("✅ URL matches allowed pattern: " + singleRegex);
+                        break;
+                    }
+
+                } catch (PatternSyntaxException e) {
+                    monitor.severe("❌ Invalid regular expression: " + singleRegex);
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity("{\"error\": \"Invalid regular expression format: " + singleRegex + "\"}")
+                            .build();
+                }
+            }
+
+            if (!matchFound) {
+                monitor.warning("❌ URL does not match any allowed pattern.");
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("{\"error\": \"URL does not match any allowed regular expression.\"}")
+                        .build();
+            }
         }
 
         try {
