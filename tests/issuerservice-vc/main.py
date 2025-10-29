@@ -332,6 +332,7 @@ async def test_endpoint(request: Request):
 async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
     """
     Issues a GAIA-X 22.06/24.11 compliant credential in JWT format
+    https://docs.gaia-x.eu/technical-committee/identity-credential-access-management/24.07/credential_format/
     """
     print(f"[DEBUG] issue_gaiax_credential for: {payload.participantDid}")
     
@@ -421,7 +422,13 @@ async def issue_gaiax_credential(payload: IssueGaiaxCredentialRequest):
             jwt_claims,
             private_pem,
             algorithm="EdDSA",
-            headers={"kid": f"{ISSUER_DID}#key-1"}
+            #headers={"kid": f"{ISSUER_DID}#key-1"}
+            headers={
+                "alg": "EdDSA",
+                "typ": "vc+ld+json+jwt",
+                "cty": "vc+ld+json",
+                "kid": f"{ISSUER_DID}#key-1"
+                }
         )
         
         print(f"[DEBUG] GAIA-X JWT credential signed successfully")
