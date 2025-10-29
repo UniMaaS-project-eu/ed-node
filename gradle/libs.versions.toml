@@ -38,6 +38,9 @@ edc-data-plane-selector-core = { module = "org.eclipse.edc:data-plane-selector-c
 edc-data-plane-self-registration = { module = "org.eclipse.edc:data-plane-self-registration", version.ref = "edc" }
 edc-data-plane-spi = { module = "org.eclipse.edc:data-plane-spi", version.ref = "edc" }
 
+# FederatedCatalog
+edc-federatedcatalog-base-bom = { module = "org.eclipse.edc:federatedcatalog-base-bom", version.ref = "edc" }
+
 # IAM & OIDC
 edc-iam-mock = { module = "org.eclipse.edc:iam-mock", version.ref = "edc" }
 
@@ -144,7 +147,7 @@ edc-fc-spi-crawler = { module = "org.eclipse.edc:crawler-spi", version.ref = "ed
 edc-fc-core = { module = "org.eclipse.edc:federated-catalog-core", version.ref = "edc" }
 edc-fc-core2025 = { module = "org.eclipse.edc:federated-catalog-core-2025", version.ref = "edc" }
 edc-fc-core08 = { module = "org.eclipse.edc:federated-catalog-core-08", version.ref = "edc" }
-edc-fc-api = { module = "org.eclipse.edc:federated-catalog-api", version.ref = "edc" }
+edc-fc-ext-api = { module = "org.eclipse.edc:federated-catalog-api", version.ref = "edc" }
 
 # Third party libs
 postgresql-driver = { module = "org.postgresql:postgresql", version.ref = "postgres" }
