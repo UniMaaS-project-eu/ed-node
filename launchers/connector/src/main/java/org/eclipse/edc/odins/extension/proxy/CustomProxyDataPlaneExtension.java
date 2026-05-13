@@ -62,6 +62,9 @@ public class CustomProxyDataPlaneExtension implements ServiceExtension {
 
         generatorService.addGeneratorFunction("HttpData", dataAddress -> Endpoint.url(proxyPublicEndpoint));
 
+        // RDF extensions 2026/05/11
+        generatorService.addGeneratorFunction("RDFService", dataAddress -> Endpoint.url(proxyPublicEndpoint));
+
         webService.registerResource(PUBLIC, new ProxyController(authorizationService, context, monitor));
 
     }

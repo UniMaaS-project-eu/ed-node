@@ -1,12 +1,181 @@
-# Ignore Gradle project-specific cache directory
-.gradle
+############################
+# Environment & Secrets
+############################
 
-# Ignore Gradle build output directory
-build
-bin
+.env
+.env.*
+!.env.example
+
+*.secret
+*.secrets
+*.token
+*.tokens
+
+############################
+# Certificates & Keys
+############################
+
+certs/
+certificates/
+
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.jks
+*.keystore
+
+wallet/
+keystore/
+signcerts/
+tls/
+msp/
+crypto-config/
+
+############################
+# Docker / Containers
+############################
+
+docker-data/
+docker-volumes/
+
+*.log
+logs/
+
+############################
+# Databases
+############################
+
+*.db
+*.sqlite
+*.sqlite3
+
+postgres-data/
+mongo-data/
+
+############################
+# Java / Gradle
+############################
+
+.gradle/
+build/
 out/
+target/
+
+*.class
+*.jar
+*.war
+*.ear
+
+############################
+# Maven
+############################
+
+.mvn/
+dependency-reduced-pom.xml
+
+############################
+# IntelliJ / IDEs
+############################
 
 .idea/
+*.iml
 
-.terraform*
-*terraform.tfstate*
+.vscode/
+
+############################
+# OS Files
+############################
+
+.DS_Store
+Thumbs.db
+
+############################
+# Python
+############################
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+venv/
+.venv/
+
+############################
+# Node / Frontend
+############################
+
+node_modules/
+
+dist/
+coverage/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+############################
+# Temporary Files
+############################
+
+tmp/
+temp/
+
+*.tmp
+*.swp
+*.bak
+*.orig
+
+############################
+# Git / History / Archives
+############################
+
+.git/
+*.zip
+*.tar
+*.tar.gz
+
+############################
+# Test / Local Overrides
+############################
+
+tests/**/.env
+tests/**/data/
+tests/**/tmp/
+
+############################
+# Kubernetes / Helm
+############################
+
+.kube/
+
+*.kubeconfig
+
+############################
+# Terraform
+############################
+
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+*.tfvars
+
+############################
+# Misc Sensitive Files
+############################
+
+*credentials*
+*password*
+*apikey*
+*api-key*
+*private*
+
+############################
+# Generated files
+############################
+
+generated/
+cache/
+.caches/

@@ -1,5 +1,6 @@
 # Stage 1: Build
-FROM openjdk:17-jdk-slim AS builder
+#FROM openjdk:17-jdk-slim AS builder
+FROM gradle:8.12-jdk17-jammy AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -39,6 +40,14 @@ COPY extensions/common/trust-framework-policies/trust-framework-policies-gaiax-p
 COPY extensions/common/trust-framework-policies/trust-framework-policies-gaiax-participant/build.gradle.kts ./extensions/common/trust-framework-policies/trust-framework-policies-gaiax-participant/build.gradle.kts
 COPY extensions/common/trust-framework-policies/trust-framework-policies-jsonld/src ./extensions/common/trust-framework-policies/trust-framework-policies-jsonld/src
 COPY extensions/common/trust-framework-policies/trust-framework-policies-jsonld/build.gradle.kts ./extensions/common/trust-framework-policies/trust-framework-policies-jsonld/build.gradle.kts
+
+# RDF extensions 2026/05/11
+COPY extensions/edc-rdf/control-plane-rdf/src ./extensions/edc-rdf/control-plane-rdf/src
+COPY extensions/edc-rdf/control-plane-rdf/build.gradle.kts ./extensions/edc-rdf/control-plane-rdf/build.gradle.kts
+COPY extensions/edc-rdf/data-plane-rdf/src ./extensions/edc-rdf/data-plane-rdf/src
+COPY extensions/edc-rdf/data-plane-rdf/build.gradle.kts ./extensions/edc-rdf/data-plane-rdf/build.gradle.kts
+COPY extensions/edc-rdf/data-plane-rdf-spi/src ./extensions/edc-rdf/data-plane-rdf-spi/src
+COPY extensions/edc-rdf/data-plane-rdf-spi/build.gradle.kts ./extensions/edc-rdf/data-plane-rdf-spi/build.gradle.kts
 
 #COPY launchers ./launchers
 #COPY launchers/catalog-server/src ./launchers/catalog-server/src

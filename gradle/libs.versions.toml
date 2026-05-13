@@ -12,6 +12,8 @@ jakarta-rsApi = "4.0.0"
 parsson = "1.1.6"
 postgres = "42.7.3"
 restAssured = "5.5.1"
+# RDF extensions 2026/05/11
+jena = { strictly = "5.4.0" }
 
 [libraries]
 
@@ -149,6 +151,12 @@ edc-fc-core2025 = { module = "org.eclipse.edc:federated-catalog-core-2025", vers
 edc-fc-core08 = { module = "org.eclipse.edc:federated-catalog-core-08", version.ref = "edc" }
 edc-fc-ext-api = { module = "org.eclipse.edc:federated-catalog-api", version.ref = "edc" }
 
+# RDF extensions 2026/05/11
+edc-spi-validator      = { module = "org.eclipse.edc:validator-spi",   version.ref = "edc" }
+edc-asset-spi          = { module = "org.eclipse.edc:asset-spi",        version.ref = "edc" }
+edc-util-lib           = { module = "org.eclipse.edc:util-lib",         version.ref = "edc" }
+edc-dataplane-util     = { module = "org.eclipse.edc:data-plane-util",  version.ref = "edc" }
+
 # Third party libs
 postgresql-driver = { module = "org.postgresql:postgresql", version.ref = "postgres" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
@@ -157,6 +165,8 @@ jakarta-json-api = { module = "jakarta.json:jakarta.json-api", version.ref = "ja
 jackson-datatype-jakarta-jsonp = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jakarta-jsonp", version.ref = "jackson" }
 jakarta-rs-Api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta-rsApi" }
 parsson = { module = "org.eclipse.parsson:parsson", version.ref = "parsson" }
+# RDF extensions 2026/05/11
+apache-jena-libs= { module = "org.apache.jena:apache-jena-libs", version.ref = "jena" }
 
 # BOM modules
 edc-bom-controlplane = { module = "org.eclipse.edc:controlplane-dcp-bom", version.ref = "edc" }

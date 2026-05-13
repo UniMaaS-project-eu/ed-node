@@ -1,5 +1,6 @@
 # Stage 1: Build
-FROM openjdk:17-jdk-slim AS builder
+#FROM openjdk:17-jdk-slim AS builder
+FROM gradle:8.12-jdk17-jammy AS builder
 
 # Set the working directory inside the container
 WORKDIR /app

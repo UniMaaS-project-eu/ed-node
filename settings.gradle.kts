@@ -45,3 +45,8 @@ include(":launchers:connector")
 include(":extensions:common:trust-framework-policies:trust-framework-policies-core")
 include(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant")
 //include(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld")
+
+// RDF extensions 2026/05/11
+include(":extensions:edc-rdf:control-plane-rdf")
+include(":extensions:edc-rdf:data-plane-rdf")
+include(":extensions:edc-rdf:data-plane-rdf-spi")

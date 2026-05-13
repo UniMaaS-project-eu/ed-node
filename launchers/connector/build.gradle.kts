@@ -29,6 +29,11 @@ dependencies {
     runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-gaiax-participant"))
 //    runtimeOnly(project(":extensions:common:trust-framework-policies:trust-framework-policies-jsonld"))
 
+    // RDF extensions
+    runtimeOnly(project(":extensions:edc-rdf:control-plane-rdf"))
+    runtimeOnly(project(":extensions:edc-rdf:data-plane-rdf"))
+    runtimeOnly(project(":extensions:edc-rdf:data-plane-rdf-spi"))
+
     // ################### Checkpoint http://localhost:9191/api/check/health ###################
     implementation(libs.edc.api.observability)
 
