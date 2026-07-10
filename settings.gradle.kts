@@ -50,3 +50,7 @@ include(":extensions:common:trust-framework-policies:trust-framework-policies-ga
 include(":extensions:edc-rdf:control-plane-rdf")
 include(":extensions:edc-rdf:data-plane-rdf")
 include(":extensions:edc-rdf:data-plane-rdf-spi")
+
+// standalone-catalog-server
+include(":launchers:standalone-federated-catalog:federated-catalog-keycloak")
+include(":launchers:standalone-federated-catalog")
