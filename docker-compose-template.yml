@@ -13,7 +13,10 @@ services:
       #- ./deployment/assets/dids/:/var/www/:ro
       - ./deployment/assets/dids/${ED_NODE_INSTANCE_NAME}/:/var/www/${ED_NODE_INSTANCE_NAME}/:ro
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - edc-proxy-${ED_NODE_INSTANCE_NAME}
+          - proxy-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
     healthcheck:
       #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
@@ -31,7 +34,9 @@ services:
     #ports:
     #  - "5433:5432"
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - edc-postgres-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
     volumes:
       - postgres-data-${ED_NODE_INSTANCE_NAME}:/var/lib/postgresql/data
@@ -65,7 +70,9 @@ services:
     #ports:
     #  - "6190:8200"
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - edc-vault-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
     depends_on:
       edc-postgres-connector:
@@ -104,7 +111,9 @@ services:
       edc-postgres-connector:
         condition: service_healthy
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - edc-vault-init-${ED_NODE_INSTANCE_NAME}
     restart: "no"
     entrypoint: sh /vault/vault-init.sh http://edc-vault-${ED_NODE_INSTANCE_NAME}:8200 ${ED_NODE_DID} edc-postgres-${ED_NODE_INSTANCE_NAME}:5432
 
@@ -128,7 +137,9 @@ services:
       edc-vault-init-connector:
         condition: service_completed_successfully
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - edc-vault-autounseal-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
     environment:
       - VAULT_ADDR=http://edc-vault-${ED_NODE_INSTANCE_NAME}:8200
@@ -157,7 +168,10 @@ services:
     #  #- "7094:7094" --> IH_VERSION_PORT WAS DEPRECATED (20250923): Not used
     #  #- "7095:7095" --> IH_STS_PORT WAS DEPRECATED (20250923): Not used
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - edc-ih-${ED_NODE_INSTANCE_NAME}
+          - ih-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
     depends_on:
       edc-postgres-connector:
@@ -273,7 +287,9 @@ services:
     hostname: edc-ih-seed-${ED_NODE_INSTANCE_NAME}
     container_name: edc-ih-seed-${ED_NODE_INSTANCE_NAME}
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - edc-ih-seed-${ED_NODE_INSTANCE_NAME}
     restart: "no"
     depends_on:
       ih-connector:
@@ -286,16 +302,16 @@ services:
       - PARTICIPANT_ID=${ED_NODE_DID}
       - PARTICIPANT_PROTOCOL=${NGINX_PROTOCOL}
       #- PARTICIPANT_HOST=${CONNECTOR_HOST}  #DEPRECATED (20250923): External access via NGINX redirects
-      - PARTICIPANT_HOST=${BASE_HOST}
+      - PARTICIPANT_HOST=${ED_NODE_DID_HOST}
       #- PARTICIPANT_CALLBACK_PORT=${CONNECTOR_CALLBACK_PORT} #DEPRECATED (20250923): External access via NGINX redirects
-      - PARTICIPANT_CALLBACK_PORT=${NGINX_EXPOSED_PORT}
+      - PARTICIPANT_CALLBACK_PORT=${ED_NODE_DID_PORT}
       #- PARTICIPANT_IH_HOST=${IH_HOST} #DEPRECATED (20250923): Replaced by Identityhub hostname (internal comunications)
       - PARTICIPANT_IH_HOST=edc-ih-${ED_NODE_INSTANCE_NAME}
       - PARTICIPANT_IH_API_KEY=${IH_API_KEY}
       #- PARTICIPANT_IH_API_PORT=${IH_API_PORT} #DEPRECATED (20250923): Comunications will use internal port
       - PARTICIPANT_IH_API_PORT=7090
       #- PARTICIPANT_IH_CREDENTIALS_PORT=${IH_CREDENTIALS_PORT} #DEPRECATED (20250923): External access via NGINX redirects
-      - PARTICIPANT_IH_CREDENTIALS_PORT=${NGINX_EXPOSED_PORT}
+      - PARTICIPANT_IH_CREDENTIALS_PORT=${ED_NODE_DID_PORT}
       #- PARTICIPANT_IH_IDENTITY_PORT=${IH_IDENTITY_PORT} #DEPRECATED (20250923): External access via NGINX redirects
       - PARTICIPANT_IH_IDENTITY_PORT=7092
 
@@ -317,7 +333,10 @@ services:
     #  #- "9091:9091" --> CONNECTOR_DATAPLANE_PUBLIC_PORT WAS DEPRECATED (20250923): Not used
     #  #- "9092:9092" --> CONNECTOR_DATAPLANE_SIGNALING_PORT WAS DEPRECATED (20250923): Not used
     networks:
-      - edc-network-${ED_NODE_INSTANCE_NAME}
+      edc-network:
+        aliases:
+          - ${ED_NODE_INSTANCE_NAME}
+          - edc-connector-${ED_NODE_INSTANCE_NAME}
     restart: unless-stopped
     depends_on:
       edc-postgres-connector:
@@ -351,7 +370,7 @@ services:
 
       # DSP
       #- EDC_DSP_CALLBACK_ADDRESS=http://${CONNECTOR_HOST}:${CONNECTOR_CALLBACK_PORT}/api/dsp #DEPRECATED (20250923): External access via NGINX redirects
-      - EDC_DSP_CALLBACK_ADDRESS=${NGINX_PROTOCOL}://${CONNECTOR_HOST}:${NGINX_EXPOSED_PORT}/api/dsp
+      - EDC_DSP_CALLBACK_ADDRESS=${NGINX_PROTOCOL}://${CONNECTOR_HOST}:${ED_NODE_DID_PORT}/api/dsp
       #- EDC_WEB_HTTP_PROTOCOL_PORT=${CONNECTOR_CALLBACK_PORT}
       
       # STS - point at IdentityHub
@@ -452,5 +471,5 @@ volumes:
   vault-init-data-${ED_NODE_INSTANCE_NAME}:
 
 networks:
- edc-network-${ED_NODE_INSTANCE_NAME}:
-    driver: bridge
+  edc-network:
+    name: edc-network

@@ -25,4 +25,4 @@ volumes:
 
 networks:
   edc-network:
-    driver: bridge
+    name: edc-network

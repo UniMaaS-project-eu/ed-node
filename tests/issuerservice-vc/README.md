@@ -11,7 +11,7 @@ To deploy the `issuerservice-vc`, you must first create the private and public k
 ```sh
 cd tests/issuerservice-vc;
 ./generateIssuerFiles-KeysDIDVault.sh <instanceName> <issuerServiceDIDHost>:<issuerServiceDIDPort>;
-# ex: ./generateIssuerFiles-KeysDIDVault.sh issuerservicevc http://localhost:9878;
+# ex: ./generateIssuerFiles-KeysDIDVault.sh issuerservicevc edc-proxy-issuerservicevc:80
 ```
 Where:
 

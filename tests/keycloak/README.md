@@ -27,7 +27,7 @@ sleep 4; docker logs -f keycloak
 
 ![keycloak-create-realm](./img/keycloak-create-realm.png)
 
-3. `Create a client Since`: each client will be associated with a different Eclipse connector, it's a good idea to enter the connector's DID in both the `Client ID` and `Name` (for example: did:web:localhost%3A9876:connector1).
+3. `Create a client Since`: each client will be associated with a different Eclipse connector, it's a good idea to enter the connector's DID in both the `Client ID` and `Name` (for example: did:web:edc-proxy-connector1%3A80:connector1).
 
 ![keycloak-create-client](./img/keycloak-create-client.png)
 
