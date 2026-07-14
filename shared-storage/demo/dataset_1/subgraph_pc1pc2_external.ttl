@@ -1,0 +1,161 @@
+@prefix sc: <http://unimaas-project.eu/MSCOntology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf4j: <http://rdf4j.org/schema/rdf4j#> .
+@prefix sesame: <http://www.openrdf.org/schema/sesame#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix fn: <http://www.w3.org/2005/xpath-functions#> .
+
+sc:process_metal_stampings_making sc:hasOutput sc:product1.
+sc:process_metal_mechanisms_making sc:hasOutput sc:product1.
+
+sc:process_metal_stampings_making a rdfs:Resource, owl:Thing, sc:Process;
+  sc:name "metal stampings making";
+  sc:isPerformedAt sc:site_322, sc:site_335, sc:site_707, sc:site_730, sc:site_959,
+    sc:site_972 .
+
+sc:site_322 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:nodeId 322;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_stampings_making .
+
+sc:site_335 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "PT";
+  sc:nodeId 335;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_stampings_making .
+
+sc:site_707 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:nodeId 707;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_stampings_making .
+
+sc:site_730 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "PL";
+  sc:nodeId 730;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_stampings_making .
+
+sc:site_959 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "CZ";
+  sc:nodeId 959;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_stampings_making .
+
+sc:site_972 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "RO";
+  sc:nodeId 972;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_stampings_making .
+
+sc:site_11 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "PL";
+  sc:tier 2;
+  sc:nodeId 11;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches" .
+
+sc:site_33 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "HU";
+  sc:tier 2;
+  sc:nodeId 33;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches" .
+
+sc:site_50 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "RO";
+  sc:tier 2;
+  sc:nodeId 50;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches" .
+
+sc:site_37 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "ES";
+  sc:tier 2;
+  sc:nodeId 37;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches" .
+
+sc:site_14 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "HU";
+  sc:tier 1;
+  sc:nodeId 14;
+  sc:entity "internal";
+  sc:siteType "JIT";
+  sc:productionRate "just-in-time" .
+
+sc:site_64 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 1;
+  sc:nodeId 64;
+  sc:entity "internal";
+  sc:siteType "JIT";
+  sc:productionRate "just-in-time" .
+
+sc:process_metal_mechanisms_making a rdfs:Resource, owl:Thing, sc:Process;
+  sc:name "metal mechanisms making";
+  sc:isPerformedAt sc:site_12, sc:site_16, sc:site_34, sc:site_35, sc:site_291 .
+
+sc:site_12 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "HU";
+  sc:tier 2;
+  sc:nodeId 12;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_mechanisms_making .
+
+sc:site_16 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 16;
+  sc:entity "internal";
+  sc:siteType "metal tier 3";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_mechanisms_making .
+
+sc:site_34 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 34;
+  sc:entity "internal";
+  sc:siteType "metal tier3";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_mechanisms_making .
+
+sc:site_35 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 35;
+  sc:entity "internal";
+  sc:siteType "metal tier3";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_mechanisms_making .
+
+sc:site_291 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 291;
+  sc:entity "internal";
+  sc:siteType "metal tier3";
+  sc:productionRate "fortnightly batches";
+  sc:performs sc:process_metal_mechanisms_making .

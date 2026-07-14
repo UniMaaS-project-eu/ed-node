@@ -1,0 +1,25 @@
+@prefix sc: <http://unimaas-project.eu/MSCOntology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://unimaas-project.eu/product/PROD104> a sc:Product ;
+    sc:id "PROD104" ;
+    sc:name "Memory Foam Fluffed" .
+
+<http://unimaas-project.eu/product/PROD101> a sc:Product ;
+    sc:id "PROD101" ;
+    sc:name "Memory Foam Core" ;
+    sc:satisfiesRequirement <http://unimaas-project.eu/requirement/REQ001> .
+
+
+<http://unimaas-project.eu/processconfig/CONF001> a sc:ProcessConfiguration ;
+    sc:id "CONF001" ;
+    sc:requiresProcess <http://unimaas-project.eu/process/PROC001> ;
+    sc:usesResource <http://unimaas-project.eu/resource/RES001> ;
+    sc:hasOutput <http://unimaas-project.eu/product/PROD104> .
+
+<http://unimaas-project.eu/processconfig/CONF002> a sc:ProcessConfiguration ;
+    sc:id "CONF002" ;
+    sc:requiresProcess <http://unimaas-project.eu/process/PROC002> ;
+    sc:hasInput <http://unimaas-project.eu/product/PROD104> ;
+    sc:hasOutput <http://unimaas-project.eu/product/PROD101> .

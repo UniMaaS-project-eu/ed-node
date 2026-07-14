@@ -1,0 +1,24 @@
+{
+    "service": [],
+    "verificationMethod": [
+        {
+            "id": "did:web:edc-proxy-issuerservicevc%3A80:issuerservicevc#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:edc-proxy-issuerservicevc%3A80:issuerservicevc",
+            "publicKeyMultibase": null,
+            "publicKeyJwk": {
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "x": "BkUPErUzN5PUaly87s-ifbfI0GC-GjG093FNO4c0MN8"
+            }
+        }
+    ],
+    "authentication": ["key-1"],
+    "id": "did:web:edc-proxy-issuerservicevc%3A80:issuerservicevc",
+    "@context": [
+        "https://www.w3.org/ns/did/v1",
+        {
+            "@base": "did:web:edc-proxy-issuerservicevc%3A80:issuerservicevc"
+        }
+    ]
+}

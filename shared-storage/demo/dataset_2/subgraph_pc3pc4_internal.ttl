@@ -1,0 +1,490 @@
+@prefix sc: <http://unimaas-project.eu/MSCOntology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf4j: <http://rdf4j.org/schema/rdf4j#> .
+@prefix sesame: <http://www.openrdf.org/schema/sesame#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix fn: <http://www.w3.org/2005/xpath-functions#> .
+
+sc:process_full_seats_making sc:hasInput sc:product1.
+sc:process_metal_structures_making sc:hasInput sc:product1.
+ 
+sc:process_metal_structures_making a rdfs:Resource, owl:Thing, sc:Process;
+  sc:name "metal structures making";
+  sc:isPerformedAt sc:site_11, sc:site_33, sc:site_50, sc:site_37, sc:site_220 .
+
+sc:site_11 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "PL";
+  sc:tier 2;
+  sc:nodeId 11;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches";
+  sc:suppliesTo sc:site_33, sc:site_50;
+  sc:performs sc:process_metal_structures_making .
+
+sc:site_33 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "HU";
+  sc:tier 2;
+  sc:nodeId 33;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches";
+  sc:suppliesTo sc:site_14, sc:site_64, sc:site_50, sc:site_37;
+  sc:performs sc:process_metal_structures_making .
+
+sc:site_50 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "RO";
+  sc:tier 2;
+  sc:nodeId 50;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches";
+  sc:performs sc:process_metal_structures_making .
+
+sc:site_37 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "ES";
+  sc:tier 2;
+  sc:nodeId 37;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "weekly batches";
+  sc:suppliesTo sc:site_50;
+  sc:performs sc:process_metal_structures_making .
+
+sc:site_220 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "CZ";
+  sc:nodeId 220;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "weekly batches";
+  sc:suppliesTo sc:site_14, sc:site_64;
+  sc:performs sc:process_metal_structures_making .
+
+sc:route_11_33 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "11_33";
+  sc:distanceKm 2185;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 5.0;
+  sc:emptyTruckCap 99;
+  sc:fullTruckCap 1;
+  sc:qDaysBetweenReceivingsForFTLs 3.3;
+  sc:qDaysBetweenEmptyReturnsFTLs 12.1;
+  sc:approxTransportCostFullTruck 2185;
+  sc:hasStartingPoint sc:site_11;
+  sc:hasEndingPoint sc:site_33 .
+
+sc:route_11_50 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "11_50";
+  sc:distanceKm 165;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 0.5;
+  sc:emptyTruckCap 99;
+  sc:fullTruckCap 1;
+  sc:qDaysBetweenReceivingsForFTLs 0.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 0.0;
+  sc:approxTransportCostFullTruck 165;
+  sc:hasStartingPoint sc:site_11;
+  sc:hasEndingPoint sc:site_50 .
+
+sc:route_16_11 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "16_11";
+  sc:distanceKm 342;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 1.0;
+  sc:emptyTruckCap 99;
+  sc:fullTruckCap 1;
+  sc:qDaysBetweenReceivingsForFTLs 49.5;
+  sc:qDaysBetweenEmptyReturnsFTLs 181.5;
+  sc:approxTransportCostFullTruck 342;
+  sc:hasStartingPoint sc:site_16;
+  sc:hasEndingPoint sc:site_11 .
+
+sc:route_34_11 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "34_11";
+  sc:distanceKm 902;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 32.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 117.4;
+  sc:approxTransportCostFullTruck 902;
+  sc:hasStartingPoint sc:site_34;
+  sc:hasEndingPoint sc:site_11 .
+
+sc:route_35_11 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "35_11";
+  sc:distanceKm 482;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 1.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 1.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 3.5;
+  sc:approxTransportCostFullTruck 482;
+  sc:hasStartingPoint sc:site_35;
+  sc:hasEndingPoint sc:site_11 .
+
+sc:route_291_11 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "291_11";
+  sc:distanceKm 951;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 0.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 0.0;
+  sc:approxTransportCostFullTruck 951;
+  sc:hasStartingPoint sc:site_291;
+  sc:hasEndingPoint sc:site_11 .
+
+sc:route_322_11 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "322_11";
+  sc:distanceKm 557;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 24.8;
+  sc:qDaysBetweenEmptyReturnsFTLs 90.8;
+  sc:approxTransportCostFullTruck 557;
+  sc:hasStartingPoint sc:site_322;
+  sc:hasEndingPoint sc:site_11 .
+
+sc:route_959_11 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "959_11";
+  sc:distanceKm 1287;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 3.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 55.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 201.7;
+  sc:approxTransportCostFullTruck 1287;
+  sc:hasStartingPoint sc:site_959;
+  sc:hasEndingPoint sc:site_11 .
+
+sc:site_14 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "HU";
+  sc:tier 1;
+  sc:nodeId 14;
+  sc:entity "internal";
+  sc:siteType "JIT";
+  sc:productionRate "just-in-time";
+  sc:performs sc:process_full_seats_making .
+
+sc:site_64 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 1;
+  sc:nodeId 64;
+  sc:entity "internal";
+  sc:siteType "JIT";
+  sc:productionRate "just-in-time";
+  sc:performs sc:process_full_seats_making .
+
+sc:route_33_14 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "33_14";
+  sc:distanceKm 1106;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.5;
+  sc:emptyTruckCap 99;
+  sc:fullTruckCap 1;
+  sc:qDaysBetweenReceivingsForFTLs 1.5;
+  sc:qDaysBetweenEmptyReturnsFTLs 5.5;
+  sc:approxTransportCostFullTruck 1106;
+  sc:hasStartingPoint sc:site_33;
+  sc:hasEndingPoint sc:site_14 .
+
+sc:route_33_37 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "33_37";
+  sc:distanceKm 516;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 1.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 1.4;
+  sc:qDaysBetweenEmptyReturnsFTLs 5.0;
+  sc:approxTransportCostFullTruck 516;
+  sc:hasStartingPoint sc:site_33;
+  sc:hasEndingPoint sc:site_37 .
+
+sc:route_33_50 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "33_50";
+  sc:distanceKm 2923;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 6.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 3.5;
+  sc:qDaysBetweenEmptyReturnsFTLs 12.9;
+  sc:approxTransportCostFullTruck 2923;
+  sc:hasStartingPoint sc:site_33;
+  sc:hasEndingPoint sc:site_50 .
+
+sc:route_33_64 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "33_64";
+  sc:distanceKm 559;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 1.5;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 0.4;
+  sc:qDaysBetweenEmptyReturnsFTLs 1.6;
+  sc:approxTransportCostFullTruck 559;
+  sc:hasStartingPoint sc:site_33;
+  sc:hasEndingPoint sc:site_64 .
+
+sc:route_35_33 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "35_33";
+  sc:distanceKm 2783;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 6.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 1.5;
+  sc:qDaysBetweenEmptyReturnsFTLs 5.6;
+  sc:approxTransportCostFullTruck 2783;
+  sc:hasStartingPoint sc:site_35;
+  sc:hasEndingPoint sc:site_33 .
+
+sc:route_335_33 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "335_33";
+  sc:distanceKm 420;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 1.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 5.2;
+  sc:qDaysBetweenEmptyReturnsFTLs 19.1;
+  sc:approxTransportCostFullTruck 420;
+  sc:hasStartingPoint sc:site_335;
+  sc:hasEndingPoint sc:site_33 .
+
+sc:route_707_33 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "707_33";
+  sc:distanceKm 1201;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.5;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 379.5;
+  sc:qDaysBetweenEmptyReturnsFTLs 1391.5;
+  sc:approxTransportCostFullTruck 1201;
+  sc:hasStartingPoint sc:site_707;
+  sc:hasEndingPoint sc:site_33 .
+
+sc:route_16_50 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "16_50";
+  sc:distanceKm 1013;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 99;
+  sc:fullTruckCap 1;
+  sc:qDaysBetweenReceivingsForFTLs 0.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 0.0;
+  sc:approxTransportCostFullTruck 1013;
+  sc:hasStartingPoint sc:site_16;
+  sc:hasEndingPoint sc:site_50 .
+
+sc:route_34_50 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "34_50";
+  sc:distanceKm 1005;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 0.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 0.0;
+  sc:approxTransportCostFullTruck 1005;
+  sc:hasStartingPoint sc:site_34;
+  sc:hasEndingPoint sc:site_50 .
+
+sc:route_37_50 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "37_50";
+  sc:distanceKm 993;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 49.5;
+  sc:qDaysBetweenEmptyReturnsFTLs 181.5;
+  sc:approxTransportCostFullTruck 993;
+  sc:hasStartingPoint sc:site_37;
+  sc:hasEndingPoint sc:site_50 .
+
+sc:route_730_50 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "730_50";
+  sc:distanceKm 633;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 0.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 0.0;
+  sc:approxTransportCostFullTruck 633;
+  sc:hasStartingPoint sc:site_730;
+  sc:hasEndingPoint sc:site_50 .
+
+sc:route_972_50 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "972_50";
+  sc:distanceKm 1969;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 4.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 99.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 363.0;
+  sc:approxTransportCostFullTruck 1969;
+  sc:hasStartingPoint sc:site_972;
+  sc:hasEndingPoint sc:site_50 .
+
+sc:route_12_37 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "12_37";
+  sc:distanceKm 889;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 99;
+  sc:fullTruckCap 1;
+  sc:qDaysBetweenReceivingsForFTLs 0.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 0.0;
+  sc:approxTransportCostFullTruck 889;
+  sc:hasStartingPoint sc:site_12;
+  sc:hasEndingPoint sc:site_37 .
+
+sc:route_972_37 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "972_37";
+  sc:distanceKm 775;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 49.5;
+  sc:qDaysBetweenEmptyReturnsFTLs 181.5;
+  sc:approxTransportCostFullTruck 775;
+  sc:hasStartingPoint sc:site_972;
+  sc:hasEndingPoint sc:site_37 .
+
+sc:route_220_14 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "220_14";
+  sc:distanceKm 2590;
+  sc:freightMode "GRP";
+  sc:leadTimeDays 6.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 253.0;
+  sc:qDaysBetweenEmptyReturnsFTLs 927.7;
+  sc:approxTransportCostFullTruck 2590;
+  sc:hasStartingPoint sc:site_220;
+  sc:hasEndingPoint sc:site_14 .
+
+sc:route_220_64 a rdfs:Resource, owl:Thing, sc:LogisticRoute;
+  sc:routeId "220_64";
+  sc:distanceKm 989;
+  sc:freightMode "FTL";
+  sc:leadTimeDays 2.0;
+  sc:emptyTruckCap 363;
+  sc:fullTruckCap 99;
+  sc:qDaysBetweenReceivingsForFTLs 2.2;
+  sc:qDaysBetweenEmptyReturnsFTLs 8.0;
+  sc:approxTransportCostFullTruck 989;
+  sc:hasStartingPoint sc:site_220;
+  sc:hasEndingPoint sc:site_64 .
+
+sc:site_16 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 16;
+  sc:entity "internal";
+  sc:siteType "metal tier 3";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_11, sc:site_50 .
+
+sc:site_34 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 34;
+  sc:entity "internal";
+  sc:siteType "metal tier3";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_11, sc:site_50 .
+
+sc:site_35 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 35;
+  sc:entity "internal";
+  sc:siteType "metal tier3";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_11, sc:site_33 .
+
+sc:site_291 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:tier 3;
+  sc:nodeId 291;
+  sc:entity "internal";
+  sc:siteType "metal tier3";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_11 .
+
+sc:site_322 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:nodeId 322;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_11 .
+
+sc:site_959 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "CZ";
+  sc:nodeId 959;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_11 .
+
+sc:site_335 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "PT";
+  sc:nodeId 335;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_33 .
+
+sc:site_707 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "DE";
+  sc:nodeId 707;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_33 .
+
+sc:site_730 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "PL";
+  sc:nodeId 730;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_50 .
+
+sc:site_972 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "RO";
+  sc:nodeId 972;
+  sc:entity "external";
+  sc:siteType "3p";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_50, sc:site_37 .
+
+sc:site_12 a rdfs:Resource, owl:Thing, sc:Site;
+  sc:country "HU";
+  sc:tier 2;
+  sc:nodeId 12;
+  sc:entity "internal";
+  sc:siteType "metal";
+  sc:productionRate "fortnightly batches";
+  sc:suppliesTo sc:site_37 .
+
+sc:process_full_seats_making a rdfs:Resource, owl:Thing, sc:Process;
+  sc:name "full seats making";
+  sc:isPerformedAt sc:site_14, sc:site_64 .
