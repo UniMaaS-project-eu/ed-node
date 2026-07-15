@@ -1,0 +1,6 @@
+[submodule "extensions/edc-rdf"]
+	path = extensions/edc-rdf
+	url = https://github.com/UniMaaS-project-eu/edc-rdf.git
+[submodule "launchers/standalone-federated-catalog"]
+	path = launchers/standalone-federated-catalog
+	url = https://github.com/UniMaaS-project-eu/federated-catalog.git
