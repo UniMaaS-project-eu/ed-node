@@ -1,6 +1,6 @@
-[submodule "launchers/standalone-federated-catalog"]
-	path = launchers/standalone-federated-catalog
-	url = https://github.com/Flanders-Make-vzw/standalone-federated-catalog.git
 [submodule "extensions/edc-rdf"]
 	path = extensions/edc-rdf
-	url = https://github.com/UniMaaS-project-eu/edc-rdf
+	url = https://github.com/UniMaaS-project-eu/edc-rdf.git
+[submodule "launchers/standalone-federated-catalog"]
+	path = launchers/standalone-federated-catalog
+	url = https://github.com/UniMaaS-project-eu/federated-catalog.git

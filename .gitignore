@@ -62,6 +62,7 @@ mongo-data/
 build/
 out/
 target/
+bin/
 
 *.class
 *.jar
