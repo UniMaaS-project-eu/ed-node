@@ -104,6 +104,13 @@ dependencies {
     implementation(libs.edc.edr.store.core)
     implementation(libs.edc.edr.store.receiver)
 
+    // ################### FederatedCatalog ###################
+    runtimeOnly(libs.edc.federatedcatalog.base.bom)
+    implementation(libs.edc.fc.spi.crawler)
+    implementation(libs.edc.configuration.filesystem)
+    runtimeOnly(libs.edc.fc.core)
+    runtimeOnly(libs.edc.fc.ext.api)
+
     // --------------------------------------------- 3-end    ---------------------------------------------------------------
 
     //Persistence
