@@ -1,0 +1,20 @@
+{
+    "storage": {
+        "postgresql": {
+            "connection_url": "postgresql://vault_user:vault_password@edc-postgres-connector2:5432/vault?sslmode=disable",
+            "table": "vault_kv_store",
+            "ha_table": "vault_ha_locks",
+            "max_parallel": 128
+        }
+    },
+    "default_lease_ttl": "168h",
+    "max_lease_ttl": "720h",
+    "ui": true,
+    "api_addr": "http://0.0.0.0:8200",
+    "listener": {
+        "tcp": {
+            "address": "0.0.0.0:8200",
+            "tls_disable": true
+        }
+    }
+}

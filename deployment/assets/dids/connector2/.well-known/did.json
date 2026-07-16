@@ -1,0 +1,40 @@
+{
+    "service": [
+        {
+            "id": "did:web:edc-proxy-connector2%3A80:connector2#dsp-api",
+            "type": "DataspaceConnector",
+            "serviceEndpoint": "http://edc-proxy-connector2:80/api/dsp"
+        },
+        {
+            "id": "did:web:edc-proxy-connector2%3A80:connector2#credential-service",
+            "type": "CredentialService",
+            "serviceEndpoint": "http://edc-proxy-connector2:80/api/credentials/v1/participants/ZGlkOndlYjplZGMtcHJveHktY29ubmVjdG9yMiUzQTgwOmNvbm5lY3RvcjI="
+        },
+        {
+            "id": "did:web:edc-proxy-connector2%3A80:connector2#identity-hub",
+            "type": "IdentityHub",
+            "serviceEndpoint": "http://edc-proxy-connector2:80/api/identity"
+        }
+    ],
+    "verificationMethod": [
+        {
+            "id": "did:web:edc-proxy-connector2%3A80:connector2#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:edc-proxy-connector2%3A80:connector2",
+            "publicKeyMultibase": null,
+            "publicKeyJwk": {
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "x": "Bq-B6SXMgMeF5isZtLsG8d_MuRKgFtT4sRgkxCq9F78"
+            }
+        }
+    ],
+    "authentication": ["key-1"],
+    "id": "did:web:edc-proxy-connector2%3A80:connector2",
+    "@context": [
+        "https://www.w3.org/ns/did/v1",
+        {
+            "@base": "did:web:edc-proxy-connector2%3A80:connector2"
+        }
+    ]
+}

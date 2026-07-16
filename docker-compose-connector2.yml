@@ -1,0 +1,475 @@
+version: '3.9'
+
+services:
+  edc-proxy:
+    image: nginx:alpine
+    hostname: edc-proxy-connector2
+    container_name: edc-proxy-connector2
+    ports:
+      - "9877:80"
+    volumes:
+      #- ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/nginx-connector2.conf:/etc/nginx/nginx.conf:ro
+      #- ./deployment/assets/dids/:/var/www/:ro
+      - ./deployment/assets/dids/connector2/:/var/www/connector2/:ro
+    networks:
+      edc-network:
+        aliases:
+          - edc-proxy-connector2
+          - proxy-connector2
+    restart: unless-stopped
+    healthcheck:
+      #test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # BBDD PostgreSQL
+  edc-postgres-connector:
+    image: postgres:15-alpine
+    hostname: edc-postgres-connector2
+    container_name: edc-postgres-connector2
+    #ports:
+    #  - "5433:5432"
+    networks:
+      edc-network:
+        aliases:
+          - edc-postgres-connector2
+    restart: unless-stopped
+    volumes:
+      - postgres-data-connector2:/var/lib/postgresql/data
+
+      # Scripts (Database+Users+Permisions)
+      #- ./launchers/postgresql-init/01-init-edc-basic.sql:/docker-entrypoint-initdb.d/01-init-edc-basic.sql:ro
+      #- ./launchers/postgresql-init/02-init-vault-basic.sql:/docker-entrypoint-initdb.d/02-init-vault-basic.sql:ro
+      #- ./launchers/postgresql-init/03-init-identityhub-basic.sql:/docker-entrypoint-initdb.d/03-init-identityhub.sql:ro
+
+      # Scripts (Database+Users+Permisions+Tables+Indexes...)
+      - ./launchers/postgresql-init/01-init-edc-all.sql:/docker-entrypoint-initdb.d/01-init-edc-all.sql:ro
+      - ./launchers/postgresql-init/02-init-vault-all.sql:/docker-entrypoint-initdb.d/02-init-vault-all.sql:ro
+      - ./launchers/postgresql-init/03-init-identityhub-all.sql:/docker-entrypoint-initdb.d/03-init-identityhub-all.sql:ro
+
+      #- ./backups-restore:/backups-restore
+    environment:
+      POSTGRES_DB: edc
+      POSTGRES_USER: edc_user
+      POSTGRES_PASSWORD: edc_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edc_user -d edc"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  edc-vault-connector:
+    image: hashicorp/vault:1.15
+    hostname: edc-vault-connector2
+    container_name: edc-vault-connector2
+    #ports:
+    #  - "6190:8200"
+    networks:
+      edc-network:
+        aliases:
+          - edc-vault-connector2
+    restart: unless-stopped
+    depends_on:
+      edc-postgres-connector:
+        condition: service_healthy
+    environment:
+      VAULT_SKIP_VERIFY: "true"  # to avoid SSL conflicts
+    volumes:
+      - ./deployment/vault/connector2/vault-connector2-config.json:/vault/custom/local.json
+      - vault-init-data-connector2:/vault
+    cap_add:
+      - IPC_LOCK
+    #command: "server -config=/vault/config/local.json"
+    command: "server -config=/vault/custom/local.json"
+    healthcheck:
+      ##test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      #test: ["CMD-SHELL", "vault status -address=http://127.0.0.1:8200 || echo 'Vault not ready yet'"]
+      ##test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:8200/v1/sys/health || exit 1"]
+      ##test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8200/v1/sys/health || echo 'Vault starting...'"]
+      test: ["CMD-SHELL", "vault status -address=http://127.0.0.1:8200 2>&1 | grep -E '(Sealed.*false|Initialized.*true)' || echo 'Vault not ready'"]
+      interval: 10s
+      timeout: 35s
+      retries: 30
+      start_period: 20s
+
+  # Initialize/Unseal and save the unseal keys and root token for the Connector
+  edc-vault-init-connector:
+    build:
+      context: .
+      dockerfile: launchers/vault-init/Dockerfile.vault-init
+    image: unimaas/vault-init:1.0
+    hostname: edc-vault-init-connector2
+    container_name: edc-vault-init-connector2
+    depends_on:
+      edc-vault-connector:
+        condition: service_healthy
+      edc-postgres-connector:
+        condition: service_healthy
+    networks:
+      edc-network:
+        aliases:
+          - edc-vault-init-connector2
+    restart: "no"
+    entrypoint: sh /vault/vault-init.sh http://edc-vault-connector2:8200 did:web:edc-proxy-connector2%3A80:connector2 edc-postgres-connector2:5432
+
+    volumes:
+      - ./launchers/vault-init/vault-init.sh:/vault/vault-init.sh
+      - ./deployment/assets/keysPrivPub/connector2/connector2_private.pem:/vault/keys/private-key.pem
+      - ./deployment/assets/keysPrivPub/connector2/connector2_public.pem:/vault/keys/certificate.pem
+      - vault-init-data-connector2:/vault
+
+# Vault Auto-Unseal Monitor
+  edc-vault-autounseal:
+    build:
+      context: .
+      dockerfile: launchers/vault-autounseal/Dockerfile.vault-autounseal
+    image: unimaas/vault-autounseal:1.0
+    hostname: edc-vault-autounseal-connector2
+    container_name: edc-vault-autounseal-connector2
+    depends_on:
+      edc-vault-connector:
+        condition: service_started
+      edc-vault-init-connector:
+        condition: service_completed_successfully
+    networks:
+      edc-network:
+        aliases:
+          - edc-vault-autounseal-connector2
+    restart: unless-stopped
+    environment:
+      - VAULT_ADDR=http://edc-vault-connector2:8200
+      - CHECK_INTERVAL=10
+    volumes:
+      - vault-init-data-connector2:/vault:ro
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q autounseal.sh || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # IdentityHub Connector
+  ih-connector:
+    build:
+      context: .
+      dockerfile: launchers/identity-hub/src/main/docker/Dockerfile_identityhub
+    image: unimaas/edc-identityhub:1.0
+    hostname: edc-ih-connector2
+    container_name: edc-ih-connector2
+    #ports-noused:
+    #  - "7090:7090" --> IH_API_PORT WAS DEPRECATED (20250923): Not exposed port
+    #  - "7091:7091" --> IH_CREDENTIALS_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  - "7092:7092" --> IH_IDENTITY_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  #- "7093:7093" --> IH_DID_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "7094:7094" --> IH_VERSION_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "7095:7095" --> IH_STS_PORT WAS DEPRECATED (20250923): Not used
+    networks:
+      edc-network:
+        aliases:
+          - edc-ih-connector2
+          - ih-connector2
+    restart: unless-stopped
+    depends_on:
+      edc-postgres-connector:
+        condition: service_healthy
+      edc-vault-connector:
+        condition: service_healthy
+#      edc-vault-init-connector:
+#        condition: service_completed_successfully
+#      edc-vault-autounseal:
+#        condition: service_healthy
+    volumes:
+      - vault-init-data-connector2:/vault-token:ro
+      - vault-init-data-connector2:/vault-identityhub-token:ro
+    environment:
+      - EDC_HOSTNAME=edc-proxy-connector2
+      
+      # Identity configuration
+      - EDC_IAM_ISSUER_ID=did:web:edc-proxy-connector2%3A80:connector2
+      - EDC_IAM_DID_WEB_USE_HTTPS=false
+      - EDC_IH_IAM_ID=did:web:edc-proxy-connector2%3A80:connector2
+      - EDC_PARTICIPANT_ID=did:web:edc-proxy-connector2%3A80:connector2
+      
+      # Key configuration, environment variables are not used, as they are set in the properties file with:
+      # - edc.iam.sts.privatekey.alias=key-1
+      # - edc.iam.sts.publickey.id=certificate
+      # The 'vault-init.sh' script will assign values ​​to the keys "key-1" and "certificate".
+      #- EDC_IAM_STS_PRIVATEKEY_ALIAS=did:web:edc-proxy-connector2%3A80:connector2-alias
+      #- EDC_IAM_STS_PUBLICKEY_ID=did:web:edc-proxy-connector2%3A80:connector2#key-1
+      - EDC_IH_API_SUPERUSER_KEY=c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=
+      
+      # STS
+      - EDC_IAM_STS_OAUTH_CLIENT_ID=did:web:edc-proxy-connector2%3A80:connector2
+      - EDC_IAM_STS_OAUTH_CLIENT_SECRET_ALIAS=did:web:edc-proxy-connector2%3A80:connector2-sts-client-secret
+
+      # Logging
+      - EDC_LOG_LEVEL=DEBUG
+      - EDC_WEB_REST_CORS_ENABLED=true
+      - EDC_MONITOR_LEVEL=DEBUG
+      
+      ########################### Vault Link ###########################
+      - EDC_VAULT_HASHICORP_URL=http://edc-vault-connector2:8200
+      - EDC_VAULT_CERTIFICATE_RESOLVER_ENABLED=true
+      - EDC_VAULT_PRIVATEKEY_RESOLVER_ENABLED=true
+
+      ########################### IssuerService-VC Link ###########################
+
+      # Types of credentials that will be automatically obtained at startup
+
+      - UNIMAAS_ISSUERSERVICEVC_PROTOCOL=http
+      - UNIMAAS_ISSUERSERVICEVC_HOST=edc-proxy-issuerservicevc
+      - UNIMAAS_ISSUERSERVICEVC_PORT=80
+      - UNIMAAS_ISSUERSERVICEVC_PATH=/api/v1/issue-credential
+
+      - UNIMAAS_ISSUERSERVICEVC_DID=did:web:edc-proxy-issuerservicevc%3A80:issuerservicevc
+
+      # TrustFramework GAIA-X --> 20250929
+      - GAIAX_ISSUERSERVICEVC_PORT=80
+      - GAIAX_ISSUERSERVICEVC_PATH=/api/v1/issue-gaiax-credential-jwt
+
+      ########################### IDP-AUTH (KEYCLOAK) Link ###########################
+
+      - UNIMAAS_OIDC_IDP_PROTOCOL=http
+      - UNIMAAS_OIDC_IDP_HOST=keycloak
+      - UNIMAAS_OIDC_IDP_PORT=8080
+      - UNIMAAS_OIDC_IDP_PATH=/realms/unimaas/protocol/openid-connect/token
+      - UNIMAAS_OIDC_IDP_CLIENT_ID=did:web:edc-proxy-connector2%3A80:connector2
+      - UNIMAAS_OIDC_IDP_CLIENT_SECRET=5UBhXDOzRvQpu3CiUPXNTn2tXxEAqlje
+
+      # ===========================================
+      # VCs Credential Manager Duplicate handling strategies
+      # ===========================================
+      # Options: SKIP_IF_EXISTS, REPLACE_ALWAYS, KEEP_NEWEST, KEEP_OLDEST, ALLOW_DUPLICATES
+      - UNIMAAS_CREDENTIALS_MEMBERSHIP_DUPLICATE_STRATEGY=REPLACE_ALWAYS
+      - UNIMAAS_CREDENTIALS_DATAPROCESSOR_DUPLICATE_STRATEGY=REPLACE_ALWAYS
+      - UNIMAAS_CREDENTIALS_GAIAX_DUPLICATE_STRATEGY=REPLACE_ALWAYS
+      
+      # ===========================================
+      # VCs Renewal strategy
+      # ===========================================
+      # Enable/Disable
+      - UNIMAAS_CREDENTIALS_RENEWAL_ENABLED=true
+      
+      # Verification interval in minutes (default every 1440 min = 1 day)
+      - UNIMAAS_CREDENTIALS_RENEWAL_CHECK_INTERVAL_MINUTES=1440
+
+      # Margin of days before expiration to renew (default 30 days)
+      - UNIMAAS_CREDENTIALS_RENEWAL_EXPIRY_THRESHOLD_DAYS=30
+
+      ########################### PostgreSQL persistence ###########################
+      ###### Connection data is included in Vault via the "vault-init.sh" script. ######
+      # BBDD default
+      - EDC_DATASOURCE_DEFAULT_NAME=default
+      # BBDD IdentityHub
+      - EDC_DATASOURCE_IDENTITYHUB_NAME=identityhub      
+      # Self-creation of schemas
+      - EDC_SQL_SCHEMA_AUTOCREATE=true      
+      # Connections Pool
+      - EDC_SQL_POOL_CONNECTIONS_MAX=10
+      - EDC_SQL_POOL_CONNECTIONS_MIN=3
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:7090/api/check/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  # Auxiliary service for registering identity contexts and storing secrets (Connector)
+  edc-ih-seed-connector:
+    build:
+      context: .
+      dockerfile: launchers/identityhub-seed/Dockerfile.identityhub-seed-participant
+    image: unimaas/identityhub-seed-participant:1.0
+    hostname: edc-ih-seed-connector2
+    container_name: edc-ih-seed-connector2
+    networks:
+      edc-network:
+        aliases:
+          - edc-ih-seed-connector2
+    restart: "no"
+    depends_on:
+      ih-connector:
+        condition: service_healthy
+#      edc-vault-init-connector:
+#        condition: service_completed_successfully
+    volumes:
+      - ./deployment/assets/keysPrivPub/connector2/connector2_public.pem:/vault/keys/certificate.pem
+    environment:
+      - PARTICIPANT_ID=did:web:edc-proxy-connector2%3A80:connector2
+      - PARTICIPANT_PROTOCOL=http
+      #- PARTICIPANT_HOST=edc-proxy-connector2  #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_HOST=edc-proxy-connector2
+      #- PARTICIPANT_CALLBACK_PORT= #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_CALLBACK_PORT=80
+      #- PARTICIPANT_IH_HOST=edc-proxy-connector2 #DEPRECATED (20250923): Replaced by Identityhub hostname (internal comunications)
+      - PARTICIPANT_IH_HOST=edc-ih-connector2
+      - PARTICIPANT_IH_API_KEY=c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=
+      #- PARTICIPANT_IH_API_PORT= #DEPRECATED (20250923): Comunications will use internal port
+      - PARTICIPANT_IH_API_PORT=7090
+      #- PARTICIPANT_IH_CREDENTIALS_PORT= #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_IH_CREDENTIALS_PORT=80
+      #- PARTICIPANT_IH_IDENTITY_PORT= #DEPRECATED (20250923): External access via NGINX redirects
+      - PARTICIPANT_IH_IDENTITY_PORT=7092
+
+  connector:
+    build:
+      context: .
+      dockerfile: launchers/connector/src/main/docker/Dockerfile_connector
+    image: unimaas/edc-connector:1.0
+    hostname: edc-connector-connector2
+    container_name: edc-connector-connector2
+    #ports-noused:
+    #  #- "8080:8080" --> CONNECTOR_API_PORT WAS DEPRECATED (20250923): Not used
+    #  - "8081:8081" --> CONNECTOR_API_MANAGEMENT_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  - "8082:8082" --> CONNECTOR_CALLBACK_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  #- "8083:8083" --> CONNECTOR_API_CONTROL_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "8084:8084" --> CONNECTOR_CATALOG_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "8085:8085" --> CONNECTOR_VERSION_PORT WAS DEPRECATED (20250923): Not used
+    #  - "11001:11001" --> CONNECTOR_PUBLIC_API_PORT WAS DEPRECATED (20250923): External access via NGINX redirects
+    #  #- "9091:9091" --> CONNECTOR_DATAPLANE_PUBLIC_PORT WAS DEPRECATED (20250923): Not used
+    #  #- "9092:9092" --> CONNECTOR_DATAPLANE_SIGNALING_PORT WAS DEPRECATED (20250923): Not used
+    networks:
+      edc-network:
+        aliases:
+          - connector2
+          - edc-connector-connector2
+    restart: unless-stopped
+    depends_on:
+      edc-postgres-connector:
+        condition: service_healthy
+      edc-vault-connector:
+        condition: service_healthy
+#      edc-vault-init-connector:
+#        condition: service_completed_successfully
+      ih-connector:
+        condition: service_healthy
+#      edc-ih-seed-connector:
+#        condition: service_completed_successfully
+
+    volumes:
+      - vault-init-data-connector2:/vault-token:ro
+    environment:
+      - EDC_HOSTNAME=edc-proxy-connector2
+
+      # Identity configuration - same as IdentityHub
+      - EDC_IAM_ISSUER_ID=did:web:edc-proxy-connector2%3A80:connector2
+      - EDC_IAM_DID_WEB_USE_HTTPS=false
+      - EDC_PARTICIPANT_ID=did:web:edc-proxy-connector2%3A80:connector2
+
+      # Key configuration, environment variables are not used, as they are set in the properties file with:
+      # - edc.iam.sts.privatekey.alias=key-1
+      # - edc.iam.sts.publickey.id=certificate
+      # The 'vault-init.sh' script will assign values ​​to the keys "key-1" and "certificate".
+      #- EDC_IAM_STS_PRIVATEKEY_ALIAS=did:web:edc-proxy-connector2%3A80:connector2-alias
+      #- EDC_IAM_STS_PUBLICKEY_ID=did:web:edc-proxy-connector2%3A80:connector2#key-1
+      - EDC_IH_API_SUPERUSER_KEY=c3VwZXItdXNlcg==.c3VwZXItc2VjcmV0LWtleQo=
+
+      # DSP
+      #- EDC_DSP_CALLBACK_ADDRESS=http://edc-proxy-connector2:/api/dsp #DEPRECATED (20250923): External access via NGINX redirects
+      - EDC_DSP_CALLBACK_ADDRESS=http://edc-proxy-connector2:80/api/dsp
+      #- EDC_WEB_HTTP_PROTOCOL_PORT=
+      
+      # STS - point at IdentityHub
+      - EDC_IAM_STS_OAUTH_CLIENT_ID=did:web:edc-proxy-connector2%3A80:connector2
+      - EDC_IAM_STS_OAUTH_CLIENT_SECRET_ALIAS=did:web:edc-proxy-connector2%3A80:connector2-sts-client-secret
+      - EDC_IAM_STS_OAUTH_TOKEN_URL=http://edc-ih-connector2:7095/api/sts/token
+
+      # Token Verification and Signing Configuration
+      #- EDC_TRANSFER_PROXY_TOKEN_SIGNER_PRIVATEKEY_ALIAS=did:web:edc-proxy-connector2%3A80:connector2-alias
+      #- EDC_TRANSFER_PROXY_TOKEN_VERIFIER_PUBLICKEY_ALIAS=did:web:edc-proxy-connector2%3A80:connector2#key-1
+
+      # IdentityHub
+      - EDC_IAM_IDENTITYHUB_URL=http://edc-ih-connector2:7093
+      - EDC_IAM_IDENTITYHUB_DID=did:web:edc-proxy-connector2%3A80:connector2
+
+      # =================== DATAPLANE CONFIGURATION ===================
+      # dataplane URLs
+      - EDC_DATAPLANE_API_PUBLIC_BASEURL=http://connector2:9091/public
+      - EDC_DATAPLANE_SIGNALING_API_URL=http://connector2:9092/api/signaling
+      
+      # Token validation endpoint
+      - EDC_DATAPLANE_TOKEN_VALIDATION_ENDPOINT=http://connector2:8083/api/control/v3/dataplane/token
+      - EDC_CONTROLPLANE_VALIDATION_ENDPOINT=http://connector2:8083/api/control/v3/dataplane/token
+      
+      # Public transfer endpoint
+      #- EDC_TRANSFER_PROXY_ENDPOINT=http://edc-proxy-connector2:/api/public
+      #- EDC_DATAPLANE_PROXY_PUBLIC_ENDPOINT=http://edc-proxy-connector2:/api//public #DEPRECATED (20250923): External access via NGINX redirects
+      - EDC_DATAPLANE_PROXY_PUBLIC_ENDPOINT=http://connector2:11001/api/public #DEPRECATED (20250923): External access via NGINX redirects
+
+      # Dataplane instance ID
+      - EDC_DATAPLANE_API_INSTANCE_ID=did:web:edc-proxy-connector2%3A80:connector2
+      
+      # Control plane selector URL (for dataplane registration CP)
+      - EDC_DPF_SELECTOR_URL=http://connector2:8083/api/control/v3/dataplanes
+      # ====================================================================
+
+      # Logging
+      - EDC_LOG_LEVEL=DEBUG
+      - EDC_WEB_REST_CORS_ENABLED=true
+      - EDC_MONITOR_LEVEL=DEBUG
+
+      ########################### IssuerService-VC Link ###########################
+      - UNIMAAS_ISSUERSERVICEVC_DID=did:web:edc-proxy-issuerservicevc%3A80:issuerservicevc
+
+      ########################### Local Mock Registry Link ###########################
+      - UNIMAAS_MOCKREGISTRY_CONTEXT_URL=http://edc-proxy-connector2:80/main/context/2411
+
+      ########################### Require extra VC for CatalogRequest ###########################
+      - UNIMAAS_ENABLE_EXTRA_VP_CATALOGREQUEST=true
+
+      ########################### Vault Link ###########################
+      - EDC_VAULT_HASHICORP_URL=http://edc-vault-connector2:8200
+
+      # ########################### XACML integration ###########################
+      - XACML_VALIDATION_ENABLED=false
+      - XACML_PDP_ENDPOINT=http://localhost:9092/pdp/verdict
+      - XACML_DOMAIN=unimaas
+
+      # Since there is a dynamic token acquisition approach that stores the token value in edc.vault.hashicorp.token (see entrypoint) it no longer makes sense to define the parameter
+      # EDC_VAULT_HASHICORP_TOKEN_FILE which is to indicate the file where said value is statically.
+      # If this were to be touched it would be necessary:
+      # a) define - EDC_VAULT_HASHICORP_TOKEN_FILE=/vault-token/token
+      # b) no use -Dedc.vault.hashicorp.token in entrypoint
+
+      #- EDC_VAULT_HASHICORP_TOKEN= It is read dynamically through the connector entrypoint and the volume.
+      #- EDC_VAULT_HASHICORP_API_SECRET_PATH= At the moment there is no choice and it takes the configuration file (edc.vault.hashicorp.api.secret.path) by default.
+      - EDC_VAULT_CERTIFICATE_RESOLVER_ENABLED=true
+      - EDC_VAULT_PRIVATEKEY_RESOLVER_ENABLED=true
+
+      ########################### PostgreSQL persistence ###########################
+      ###### Connection data is included in Vault via the "vault-init.sh" script. ######
+      # BBDD default
+      - EDC_DATASOURCE_DEFAULT_NAME=default
+      # BBDD Assets
+      - EDC_DATASOURCE_ASSET_NAME=asset
+      # BBDD contractdefinition
+      - EDC_DATASOURCE_CONTRACTDEFINITION_NAME=contractdefinition
+      # BBDD policy
+      - EDC_DATASOURCE_POLICY_NAME=policy
+      # BBDD contractnegotiation
+      - EDC_DATASOURCE_CONTRACTNEGOTIATION_NAME=contractnegotiation
+      #  BBDD ransferprocess
+      - EDC_DATASOURCE_TRANSFERPROCESS_NAME=transferprocess
+      # Self-creation of schemas
+      - EDC_SQL_SCHEMA_AUTOCREATE=true
+      # Connections Pool
+      - EDC_SQL_POOL_CONNECTIONS_MAX=10
+      - EDC_SQL_POOL_CONNECTIONS_MIN=3
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8080/api/check/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+volumes:
+  postgres-data-connector2:
+  vault-init-data-connector2:
+
+networks:
+  edc-network:
+    name: edc-network
