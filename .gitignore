@@ -2,9 +2,9 @@
 # Environment & Secrets
 ############################
 
-.env
-.env.*
-!.env.example
+#.env
+#.env.*
+#!.env.example
 
 *.secret
 *.secrets
@@ -142,7 +142,7 @@ temp/
 # Test / Local Overrides
 ############################
 
-tests/**/.env
+#tests/**/.env
 tests/**/data/
 tests/**/tmp/
 
