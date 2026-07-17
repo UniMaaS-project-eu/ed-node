@@ -6,7 +6,7 @@ services:
     hostname: edc-proxy-connectorcp
     container_name: edc-proxy-connectorcp
     ports:
-      - "9877:80"
+      - "9879:80"
     volumes:
       #- ./deployment/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./deployment/nginx/nginx-connectorcp.conf:/etc/nginx/nginx.conf:ro
@@ -352,6 +352,7 @@ services:
 
     volumes:
       - vault-init-data-connectorcp:/vault-token:ro
+      - ./shared-storage:/shared-storage
     environment:
       - EDC_HOSTNAME=edc-proxy-connectorcp
 

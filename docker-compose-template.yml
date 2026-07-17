@@ -352,6 +352,7 @@ services:
 
     volumes:
       - vault-init-data-${ED_NODE_INSTANCE_NAME}:/vault-token:ro
+      - ./shared-storage:/shared-storage
     environment:
       - EDC_HOSTNAME=${CONNECTOR_HOST}
 
