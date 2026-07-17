@@ -352,7 +352,6 @@ services:
 
     volumes:
       - vault-init-data-connector1:/vault-token:ro
-      - ./shared-storage:/shared-storage
     environment:
       - EDC_HOSTNAME=edc-proxy-connector1
 
