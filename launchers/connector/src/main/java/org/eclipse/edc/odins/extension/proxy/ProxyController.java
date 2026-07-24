@@ -30,12 +30,23 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.riot.RiotException;
 import org.eclipse.edc.connector.dataplane.spi.iam.DataPlaneAuthorizationService;
+import org.eclipse.edc.spi.types.domain.DataAddress;
 //import org.eclipse.edc.identityhub.spi.verifiablecredentials.model.VerifiableCredentialResource;
 import org.eclipse.edc.spi.monitor.Monitor;
 import org.eclipse.edc.spi.system.ServiceExtensionContext;
 
 // 2. STANDARD_JAVA_PACKAGE (java.*)
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -44,6 +55,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,6 +116,27 @@ public class ProxyController {
     */
 
 
+    // RDF DataAddress support
+    private static final String RDF_NAMESPACE = "https://ontology.flandersmake.be/edc_rdf/ontology#";
+    private static final String RDF_DATA_ADDRESS_TYPE = "RDFService";
+    private static final String RDF_QUERY_SERIALIZATION = "edc_rdf:serialization";
+
+    private static final String RDF_SERVICE_TYPE = RDF_NAMESPACE + "serviceType";
+    private static final String RDF_FILE_PATH = RDF_NAMESPACE + "filePath";
+    private static final String RDF_HTTP_ENDPOINT = RDF_NAMESPACE + "httpEndpoint";
+    private static final String RDF_SPARQL_ENDPOINT = RDF_NAMESPACE + "sparqlEndpoint";
+    private static final String RDF_SPARQL_QUERY = RDF_NAMESPACE + "sparqlQuery";
+    private static final String RDF_SERIALIZATION = RDF_NAMESPACE + "serialization";
+    private static final String RDF_ENCODING = RDF_NAMESPACE + "encoding";
+    private static final String RDF_USERNAME = RDF_NAMESPACE + "username";
+    private static final String RDF_PASSWORD = RDF_NAMESPACE + "password";
+
+    // Restricts local RDF files to a controlled directory. The path is resolved inside the connector container.
+    private static final String ENV_RDF_ALLOWED_BASE_PATH = "RDF_ALLOWED_BASE_PATH";
+    private static final String RDF_ALLOWED_BASE_PATH = "rdf.allowed.base.path";
+    private static final String DEFAULT_RDF_ALLOWED_BASE_PATH = "/shared-storage";
+    private final java.nio.file.Path rdfAllowedBasePath;
+
     private static final String ENV_EDC_PARTICIPANT_ID = "EDC_PARTICIPANT_ID";
     private static final String EDC_PARTICIPANT_ID = "edc.participant.id";
     private static final String DEFAULT_EDC_PARTICIPANT_ID = "did:web:localhost%3A7083";
@@ -149,6 +182,14 @@ public class ProxyController {
         */
 
         this.participantID = getConfigValue(context, ENV_EDC_PARTICIPANT_ID, EDC_PARTICIPANT_ID, DEFAULT_EDC_PARTICIPANT_ID);
+
+        String allowedRdfPath = getConfigValue(
+                context,
+                ENV_RDF_ALLOWED_BASE_PATH,
+                RDF_ALLOWED_BASE_PATH,
+                DEFAULT_RDF_ALLOWED_BASE_PATH
+        );
+        this.rdfAllowedBasePath = java.nio.file.Path.of(allowedRdfPath).toAbsolutePath().normalize();
 
         this.xacmlValidation = getBooleanConfigValue(context, ENV_XACML_VALIDATION_ENABLED, XACML_VALIDATION_ENABLED, DEFAULT_XACML_VALIDATION_ENABLED);
         this.xacmlPDPEndpoint = getConfigValue(context, ENV_XACML_PDP_ENDPOINT, XACML_PDP_ENDPOINT, DEFAULT_XACML_PDP_ENDPOINT);
@@ -609,6 +650,12 @@ public class ProxyController {
             }
         }
 
+        // The custom public API controller handles HttpData itself. RDFService does not contain an EDC baseUrl,
+        // so it must be handled before entering the HTTP proxy branch.
+        if (RDF_DATA_ADDRESS_TYPE.equalsIgnoreCase(sourceDataAddress.getType())) {
+            return handleRdfService(sourceDataAddress, requestContext);
+        }
+
         try {
 
             // STEP 1. Get the address to which the forwarding should be performed
@@ -617,7 +664,15 @@ public class ProxyController {
             var targetUrl = sourceDataAddress.getStringProperty(EDC_NAMESPACE + "baseUrl") + "/" + requestContext.getUriInfo().getPath();
             */
             // - Option 2: This option DOES consider the request parameters when redirecting to the data source API.
-            var targetUrlBuilder = new StringBuilder(sourceDataAddress.getStringProperty(EDC_NAMESPACE + "baseUrl"));
+            String baseUrl = sourceDataAddress.getStringProperty(EDC_NAMESPACE + "baseUrl");
+            if (baseUrl == null || baseUrl.isBlank()) {
+                monitor.severe("Missing baseUrl for DataAddress type: " + sourceDataAddress.getType());
+                return jsonError(
+                        Response.Status.BAD_REQUEST,
+                        "The selected DataAddress cannot be handled by the HTTP proxy: missing baseUrl"
+                );
+            }
+            var targetUrlBuilder = new StringBuilder(baseUrl);
             // Add this line to log the value of targetUrl
             //monitor.info("1 - Proxy target URL: " + targetUrlBuilder);
             var endpointUrl = requestContext.getUriInfo().getPath();
@@ -890,6 +945,298 @@ public class ProxyController {
                     .entity("{\"error\": \"Failed to contact backend service\"}")
                     .build();
         }
+    }
+
+    /**
+     * Handles an RDFService DataAddress. Supported service types match the edc-rdf extension:
+     * file, httpendpoint and sparqlendpoint.
+     */
+    private Response handleRdfService(DataAddress sourceDataAddress, ContainerRequestContext requestContext) {
+        if (!"GET".equalsIgnoreCase(requestContext.getMethod())) {
+            return jsonError(Response.Status.METHOD_NOT_ALLOWED, "RDFService currently supports GET requests only");
+        }
+
+        String serviceType = sourceDataAddress.getStringProperty(RDF_SERVICE_TYPE);
+        if (serviceType == null || serviceType.isBlank()) {
+            return jsonError(Response.Status.BAD_REQUEST, "Missing required RDF property: edc_rdf:serviceType");
+        }
+
+        String sourceSerialization = sourceDataAddress.getStringProperty(RDF_SERIALIZATION);
+        String requestedSerialization = requestContext.getUriInfo()
+                .getQueryParameters()
+                .getFirst(RDF_QUERY_SERIALIZATION);
+
+        if (requestedSerialization == null || requestedSerialization.isBlank()) {
+            requestedSerialization = sourceSerialization;
+        }
+        if (requestedSerialization == null || requestedSerialization.isBlank()) {
+            requestedSerialization = "TTL";
+        }
+
+        Lang targetLang = resolveRdfLang(requestedSerialization);
+        if (targetLang == null || !RDFLanguages.isTriples(targetLang)) {
+            return jsonError(
+                    Response.Status.BAD_REQUEST,
+                    "Unsupported target RDF serialization: " + requestedSerialization
+            );
+        }
+
+        try {
+            Model model = switch (serviceType.trim().toLowerCase()) {
+                case "file" -> loadRdfFromFile(sourceDataAddress, sourceSerialization);
+                case "httpendpoint", "fileendpoint" -> loadRdfFromHttpEndpoint(sourceDataAddress, sourceSerialization);
+                case "sparqlendpoint" -> loadRdfFromSparqlEndpoint(sourceDataAddress);
+                default -> throw new IllegalArgumentException(
+                        "Unsupported edc_rdf:serviceType: " + serviceType
+                );
+            };
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            RDFDataMgr.write(output, model, targetLang);
+
+            monitor.info(
+                    "RDFService response generated. serviceType=" + serviceType
+                            + ", serialization=" + targetLang.getName()
+                            + ", triples=" + model.size()
+            );
+
+            return Response.ok(output.toByteArray())
+                    .header(CONTENT_TYPE, targetLang.getHeaderString())
+                    .build();
+
+        } catch (IllegalArgumentException e) {
+            monitor.warning("Invalid RDFService request: " + e.getMessage());
+            return jsonError(Response.Status.BAD_REQUEST, e.getMessage());
+        } catch (SecurityException e) {
+            monitor.severe("Blocked RDF file access: " + e.getMessage());
+            return jsonError(Response.Status.FORBIDDEN, e.getMessage());
+        } catch (RiotException e) {
+            monitor.severe("Unable to parse or serialize RDF data: " + e.getMessage(), e);
+            return jsonError(Response.Status.BAD_GATEWAY, "Unable to parse RDF data: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            monitor.severe("RDF upstream request interrupted: " + e.getMessage(), e);
+            return jsonError(Response.Status.BAD_GATEWAY, "RDF upstream request was interrupted");
+        } catch (IOException e) {
+            monitor.severe("Unable to read RDF source: " + e.getMessage(), e);
+            return jsonError(Response.Status.BAD_GATEWAY, "Unable to read RDF source: " + e.getMessage());
+        } catch (RuntimeException e) {
+            monitor.severe("Unexpected RDFService error: " + e.getMessage(), e);
+            return jsonError(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected RDFService error");
+        }
+    }
+
+    private Model loadRdfFromFile(DataAddress sourceDataAddress, String configuredSerialization) throws IOException {
+        String configuredPath = requiredRdfProperty(sourceDataAddress, RDF_FILE_PATH, "edc_rdf:filePath");
+
+        java.nio.file.Path allowedRoot;
+        try {
+            allowedRoot = rdfAllowedBasePath.toRealPath();
+        } catch (IOException e) {
+            throw new IOException("Configured RDF allowed base path does not exist: " + rdfAllowedBasePath, e);
+        }
+
+        java.nio.file.Path rdfFile;
+        try {
+            rdfFile = java.nio.file.Path.of(configuredPath).toRealPath();
+        } catch (IOException e) {
+            throw new IOException("RDF file does not exist or cannot be resolved: " + configuredPath, e);
+        }
+
+        // toRealPath() also resolves symbolic links, preventing symlink/path traversal outside the shared directory.
+        if (!rdfFile.startsWith(allowedRoot)) {
+            throw new SecurityException(
+                    "RDF file is outside the allowed directory " + allowedRoot + ": " + rdfFile
+            );
+        }
+        if (!Files.isRegularFile(rdfFile) || !Files.isReadable(rdfFile)) {
+            throw new IOException("RDF file is not a readable regular file: " + rdfFile);
+        }
+
+        Lang sourceLang = resolveSourceLang(configuredSerialization, null, rdfFile.toString());
+        if (sourceLang == null) {
+            throw new IllegalArgumentException(
+                    "Unsupported or missing RDF source serialization for file: " + configuredSerialization
+            );
+        }
+
+        String encoding = sourceDataAddress.getStringProperty(RDF_ENCODING);
+        monitor.info(
+                "Reading RDF file " + rdfFile
+                        + " as " + sourceLang.getName()
+                        + (encoding == null ? "" : " (declared encoding=" + encoding + ")")
+        );
+
+        Model model = ModelFactory.createDefaultModel();
+        try (InputStream input = Files.newInputStream(rdfFile)) {
+            RDFDataMgr.read(model, input, rdfFile.toUri().toString(), sourceLang);
+        }
+        return model;
+    }
+
+    private Model loadRdfFromHttpEndpoint(DataAddress sourceDataAddress, String configuredSerialization)
+            throws IOException, InterruptedException {
+        String endpoint = requiredRdfProperty(sourceDataAddress, RDF_HTTP_ENDPOINT, "edc_rdf:httpEndpoint");
+
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(validatedHttpUri(endpoint, "edc_rdf:httpEndpoint"))
+                .header("Accept", rdfAcceptHeader())
+                .GET();
+        addBasicAuthentication(requestBuilder, sourceDataAddress);
+
+        HttpResponse<byte[]> response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IOException(
+                    "RDF HTTP endpoint returned status " + response.statusCode() + " for " + endpoint
+            );
+        }
+
+        String contentType = response.headers().firstValue(CONTENT_TYPE).orElse(null);
+        Lang sourceLang = resolveSourceLang(configuredSerialization, contentType, endpoint);
+        if (sourceLang == null) {
+            throw new IllegalArgumentException(
+                    "Unable to determine RDF serialization returned by HTTP endpoint " + endpoint
+            );
+        }
+
+        Model model = ModelFactory.createDefaultModel();
+        try (InputStream input = new ByteArrayInputStream(response.body())) {
+            RDFDataMgr.read(model, input, endpoint, sourceLang);
+        }
+        return model;
+    }
+
+    private Model loadRdfFromSparqlEndpoint(DataAddress sourceDataAddress)
+            throws IOException, InterruptedException {
+        String endpoint = requiredRdfProperty(sourceDataAddress, RDF_SPARQL_ENDPOINT, "edc_rdf:sparqlEndpoint");
+        String sparqlQuery = requiredRdfProperty(sourceDataAddress, RDF_SPARQL_QUERY, "edc_rdf:sparqlQuery");
+
+        Query parsedQuery;
+        try {
+            parsedQuery = QueryFactory.create(sparqlQuery);
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Invalid SPARQL query: " + e.getMessage(), e);
+        }
+        if (!parsedQuery.isConstructType() && !parsedQuery.isDescribeType()) {
+            throw new IllegalArgumentException(
+                    "RDFService SPARQL queries must be CONSTRUCT or DESCRIBE queries"
+            );
+        }
+
+        String formBody = "query=" + URLEncoder.encode(sparqlQuery, StandardCharsets.UTF_8);
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(validatedHttpUri(endpoint, "edc_rdf:sparqlEndpoint"))
+                .header(CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8")
+                .header("Accept", rdfAcceptHeader())
+                .POST(HttpRequest.BodyPublishers.ofString(formBody, StandardCharsets.UTF_8));
+        addBasicAuthentication(requestBuilder, sourceDataAddress);
+
+        HttpResponse<byte[]> response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IOException(
+                    "SPARQL endpoint returned status " + response.statusCode() + " for " + endpoint
+            );
+        }
+
+        String contentType = response.headers().firstValue(CONTENT_TYPE).orElse(null);
+        Lang sourceLang = resolveSourceLang(null, contentType, endpoint);
+        if (sourceLang == null) {
+            throw new IllegalArgumentException(
+                    "SPARQL endpoint did not return a recognized RDF Content-Type: " + contentType
+            );
+        }
+
+        Model model = ModelFactory.createDefaultModel();
+        try (InputStream input = new ByteArrayInputStream(response.body())) {
+            RDFDataMgr.read(model, input, endpoint, sourceLang);
+        }
+        return model;
+    }
+
+    private URI validatedHttpUri(String endpoint, String displayName) {
+        URI uri;
+        try {
+            uri = URI.create(endpoint);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid URL in " + displayName + ": " + endpoint, e);
+        }
+
+        String scheme = uri.getScheme();
+        if (scheme == null
+                || !("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
+            throw new IllegalArgumentException(
+                    displayName + " must use http or https: " + endpoint
+            );
+        }
+        return uri;
+    }
+
+    private void addBasicAuthentication(HttpRequest.Builder requestBuilder, DataAddress sourceDataAddress) {
+        String username = sourceDataAddress.getStringProperty(RDF_USERNAME);
+        String password = sourceDataAddress.getStringProperty(RDF_PASSWORD);
+
+        if (username == null && password == null) {
+            return;
+        }
+        if (username == null || password == null) {
+            throw new IllegalArgumentException(
+                    "Both edc_rdf:username and edc_rdf:password must be supplied together"
+            );
+        }
+
+        String credentials = username + ":" + password;
+        String encoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        requestBuilder.header(AUTHORIZATION, "Basic " + encoded);
+    }
+
+    private String requiredRdfProperty(DataAddress sourceDataAddress, String key, String displayName) {
+        String value = sourceDataAddress.getStringProperty(key);
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Missing required RDF property: " + displayName);
+        }
+        return value;
+    }
+
+    private Lang resolveSourceLang(String configuredSerialization, String contentType, String resourceName) {
+        Lang lang = resolveRdfLang(configuredSerialization);
+
+        if (lang == null && contentType != null && !contentType.isBlank()) {
+            String normalizedContentType = contentType.split(";", 2)[0].trim();
+            lang = RDFLanguages.contentTypeToLang(normalizedContentType);
+        }
+        if (lang == null && resourceName != null && !resourceName.isBlank()) {
+            lang = RDFLanguages.filenameToLang(resourceName);
+        }
+
+        return lang != null && RDFLanguages.isTriples(lang) ? lang : null;
+    }
+
+    private Lang resolveRdfLang(String serialization) {
+        if (serialization == null || serialization.isBlank()) {
+            return null;
+        }
+
+        String normalized = serialization.trim().toUpperCase();
+        return switch (normalized) {
+            case "TTL", "TURTLE", "TEXT/TURTLE" -> RDFLanguages.TURTLE;
+            case "RDF/XML", "RDFXML", "XML", "APPLICATION/RDF+XML" -> RDFLanguages.RDFXML;
+            case "JSON-LD", "JSONLD", "JSON-LD 1.1", "APPLICATION/LD+JSON" -> RDFLanguages.JSONLD;
+            case "NT", "N-TRIPLE", "N-TRIPLES", "APPLICATION/N-TRIPLES" -> RDFLanguages.NTRIPLES;
+            default -> RDFLanguages.nameToLang(serialization.trim());
+        };
+    }
+
+    private String rdfAcceptHeader() {
+        return "text/turtle, application/rdf+xml;q=0.9, application/ld+json;q=0.8, application/n-triples;q=0.7";
+    }
+
+    private Response jsonError(Response.Status status, String message) {
+        ObjectNode error = objectMapper.createObjectNode();
+        error.put("error", message == null ? "Unknown error" : message);
+        return Response.status(status)
+                .header(CONTENT_TYPE, "application/json")
+                .entity(error.toString())
+                .build();
     }
 
     /**

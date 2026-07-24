@@ -111,6 +111,9 @@ dependencies {
     runtimeOnly(libs.edc.fc.core)
     runtimeOnly(libs.edc.fc.ext.api)
 
+    // JENA
+    implementation(libs.apache.jena.arq)
+
     // --------------------------------------------- 3-end    ---------------------------------------------------------------
 
     //Persistence

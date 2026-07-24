@@ -166,7 +166,9 @@ jackson-datatype-jakarta-jsonp = { module = "com.fasterxml.jackson.datatype:jack
 jakarta-rs-Api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta-rsApi" }
 parsson = { module = "org.eclipse.parsson:parsson", version.ref = "parsson" }
 # RDF extensions 2026/05/11
-apache-jena-libs= { module = "org.apache.jena:apache-jena-libs", version.ref = "jena" }
+# apache-jena-libs= { module = "org.apache.jena:apache-jena-libs", version.ref = "jena" }
+apache-jena-arq = { module = "org.apache.jena:jena-arq", version.ref = "jena" }
+apache-jena-rdfconnection = { module = "org.apache.jena:jena-rdfconnection", version.ref = "jena" }
 
 # BOM modules
 edc-bom-controlplane = { module = "org.eclipse.edc:controlplane-dcp-bom", version.ref = "edc" }
