@@ -26,3 +26,37 @@
 # datasets
 
 Connector1
+
+# helpers
+
+## Issuer service
+
+```sh
+cd tests/issuerservice-vc;
+
+. .env
+
+. ./generateIssuerFiles-KeysDIDVault.sh ${ISSUERSERVICEVC_INSTANCE_NAME} ${ISSUERSERVICEVC_HOST}:${ISSUERSERVICEVC_DID_PORT};
+
+. ./deploy.sh $ISSUERSERVICEVC_INSTANCE_NAME 
+```
+
+## Connector
+
+```sh
+. .env-connector1
+. .env-connector2
+. .env-connectorcp
+
+. ./generateEDNodeFiles-KeysDIDVault.sh ${ED_NODE_INSTANCE_NAME} ${BASE_HOST}:${NGINX_INTERNAL_PORT};
+
+. ./deploy.sh ${ED_NODE_INSTANCE_NAME} 
+. ./deploy.sh ${ED_NODE_INSTANCE_NAME}  down-v
+```
+
+
+
+
+
+
+
