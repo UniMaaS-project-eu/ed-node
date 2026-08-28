@@ -51,7 +51,20 @@ cd tests/issuerservice-vc;
 . ./generateEDNodeFiles-KeysDIDVault.sh ${ED_NODE_INSTANCE_NAME} ${BASE_HOST}:${NGINX_INTERNAL_PORT};
 
 . ./deploy.sh ${ED_NODE_INSTANCE_NAME} 
-. ./deploy.sh ${ED_NODE_INSTANCE_NAME}  down-v
+. ./deploy.sh ${ED_NODE_INSTANCE_NAME} restart
+. ./deploy.sh ${ED_NODE_INSTANCE_NAME} down-v
+```
+
+
+## Standalone federated catalog server
+
+From central kg root
+
+```sh
+./deploy.sh up central-platform-postgres
+./deploy.sh down central-platform-postgres
+./deploy.sh up central-platform-federated-catalog | tee log/central-platform-federated-catalog-run1.log
+./deploy.sh down central-platform-federated-catalog
 ```
 
 
