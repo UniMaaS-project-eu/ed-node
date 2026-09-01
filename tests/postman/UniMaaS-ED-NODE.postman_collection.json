@@ -1259,6 +1259,49 @@
               "name": "412-consumer-file asset",
               "item": [
                 {
+                  "name": "421-Get Federated Catalog",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "// get the policy id of \"request-rdf-service-file\" and save it as an environment variable\nif(pm.response.code < 300 && pm.response.code >= 200){\n    if(pm.response.json()){\n        const response = pm.response.json();\n        const catalogs = Array.isArray(response) ? response : [ response ];\n        const datasets = catalogs.flatMap(catalog => Array.isArray(catalog[\"dcat:dataset\"]) ? catalog[\"dcat:dataset\"] : [ catalog[\"dcat:dataset\"] ]);\n        console.log(JSON.stringify(datasets, undefined, 2));\n        const dataset = datasets.find(asset => asset[\"@id\"]==\"request-rdf-service-file\")\n        pm.collectionVariables.set(\"POLICY_ID_RDF\", dataset[\"odrl:hasPolicy\"][\"@id\"]);\n    }\n}\n\npm.test(\"Status code is >=200 and <300\", function () {\n    pm.expect(pm.response.code < 300 && pm.response.code >= 200).to.be.true\n});\npm.test(\"Policy id for asset request-rdf-service-file is set\", function(){\n    pm.expect(pm.collectionVariables.get(\"POLICY_ID_RDF\")).not.to.be.undefined\n})"
+                        ]
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"@type\": \"QuerySpec\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "http://{{HOST}}:{{FederatedCatalogPortCatalog}}/api/catalog/v1alpha/catalog/query",
+                      "protocol": "http",
+                      "host": [
+                        "{{HOST}}"
+                      ],
+                      "port": "{{FederatedCatalogPortCatalog}}",
+                      "path": [
+                        "api",
+                        "catalog",
+                        "v1alpha",
+                        "catalog",
+                        "query"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
                   "name": "421-Get Connector1 Catalog",
                   "event": [
                     {
@@ -1481,28 +1524,19 @@
                     {
                       "listen": "prerequest",
                       "script": {
-                        "exec": [
-                          "if(!pm.collectionVariables.has(\"CONTRACT_AGREEMENT_ID_RDF\")){",
-                          "    throw new Error('Contract Agreement ID is not yet available, please execute requests \"Initiate Negotiation and Get Contract Negotiation\" first!');",
-                          "}"
-                        ],
                         "type": "text/javascript",
-                        "packages": {},
-                        "requests": {}
+                        "exec": [
+                          "if(!pm.collectionVariables.has(\"CONTRACT_AGREEMENT_ID_RDF\")){\n    throw new Error('Contract Agreement ID is not yet available, please execute requests \"Initiate Negotiation and Get Contract Negotiation\" first!');\n}"
+                        ]
                       }
                     },
                     {
                       "listen": "test",
                       "script": {
-                        "exec": [
-                          "pm.test(\"Status code is >=200 and <300\", function () {",
-                          "    pm.expect(pm.response.code < 300 && pm.response.code >= 200).to.be.true",
-                          "});",
-                          ""
-                        ],
                         "type": "text/javascript",
-                        "packages": {},
-                        "requests": {}
+                        "exec": [
+                          "pm.test(\"Status code is >=200 and <300\", function () {\n    pm.expect(pm.response.code < 300 && pm.response.code >= 200).to.be.true\n});\n"
+                        ]
                       }
                     }
                   ],
@@ -1511,7 +1545,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"assetId\": \"request-rdf-service-file\",\n    \"counterPartyAddress\": \"http://edc-connector-connector1:8082/api/dsp\",\n    \"counterPartyId\": \"{{Connector1DID}}\",\n    \"contractId\": \"{{CONTRACT_AGREEMENT_ID_RDF}}\",\n    \"dataDestination\": {\n        \"type\": \"HttpProxy\"\n    },\n    \"protocol\": \"dataspace-protocol-http\",\n    \"transferType\": \"HttpData-PULL\"\n}",
+                      "raw": "{\n    \"@context\": [\n        \"https://w3id.org/edc/connector/management/v0.0.1\"\n    ],\n    \"assetId\": \"request-rdf-service-file\",\n    \"counterPartyAddress\": \"http://edc-connector-connector1:8082/api/dsp\",\n    \"counterPartyId\": \"{{Connector1DID}}\",\n    \"contractId\": \"{{CONTRACT_AGREEMENT_ID_RDF}}\",\n    \"dataDestination\": {\n        \"type\": \"HttpProxy\"\n    },\n    \"protocol\": \"dataspace-protocol-http\",\n    \"transferType\": \"HttpData-PULL\",\n    \"callbackAddresses\": [ {\n        \"uri\": \"http://edc-connector-connectorcp:8082/api/dsp\"\n    }]\n}",
                       "options": {
                         "raw": {
                           "language": "json"

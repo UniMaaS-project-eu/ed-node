@@ -28,6 +28,10 @@
     - ports 9877:80
   - connectorcp
     - ports 9879:80
+- postgres
+  - db: edc
+  - user: edc_user
+  - password: edc_password    
 
 ## Datasets
 
