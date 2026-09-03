@@ -39,6 +39,12 @@ Connector1
 
 ## Run
 
+### Postgres
+
+```sh
+psql edc edc_user
+```
+
 ### Start the Issuer Service
 
 ```sh
