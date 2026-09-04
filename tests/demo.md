@@ -35,7 +35,16 @@
 
 ## Datasets
 
-Connector1
+Connector1: 
+- file based:
+  - internal processes (downstream or'after)
+  - file `/shared-storage/demo/dataset_2/subgraph_pc3pc4_internal.ttl`
+
+Connector2:
+- triple store based:
+  - external processes (upstream or before)
+  - store: `http://localhost:3032/provider/query`
+  - query: `PREFIX sc: <http://example.com/MSCOnto#> CONSTRUCT { ?s ?p ?o .} WHERE { ?s ?p ?o .}`  
 
 ## Run
 
